@@ -1,12 +1,12 @@
-import { redirect } from "next/navigation";
-import { leerPlataformas, leerSolicitudes } from "@/lib/db";
-import { getSesion } from "@/lib/session";
-import { logoutAction } from "@/app/actions";
-import { SolicitudForm } from "@/components/SolicitudForm";
-import { SolicitudesList } from "@/components/SolicitudesList";
-import { DashboardTabs } from "@/components/DashboardTabs";
-import { DirectorioEquipos } from "@/components/DirectorioEquipos";
-import { construirDirectorio } from "@/lib/services/solicitudes.service";
+import { redirect } from 'next/navigation';
+import { leerPlataformas, leerSolicitudes } from '@/lib/db';
+import { getSesion } from '@/lib/session';
+import { logoutAction } from '@/app/actions';
+import { SolicitudForm } from '@/components/SolicitudForm';
+import { SolicitudesList } from '@/components/SolicitudesList';
+import { DashboardTabs } from '@/components/DashboardTabs';
+import { DirectorioEquipos } from '@/components/DirectorioEquipos';
+import { construirDirectorio } from '@/lib/services/solicitudes.service';
 
 export default async function Home({
   searchParams,
@@ -14,16 +14,14 @@ export default async function Home({
   searchParams: Promise<{ creada?: string }>;
 }) {
   const sesion = await getSesion();
-  if (!sesion) redirect("/login");
+  if (!sesion) redirect('/login');
 
   const { creada } = await searchParams;
-  const esEquipo = sesion.rol === "equipo";
+  const esEquipo = sesion.rol === 'equipo' || sesion.rol === 'admin';
 
   const [plataformas, todas] = await Promise.all([leerPlataformas(), leerSolicitudes()]);
   const plataformasActivas = plataformas.filter((p) => p.activa);
-  const solicitudes = esEquipo
-    ? todas
-    : todas.filter((s) => s.solicitanteEmail === sesion.email);
+  const solicitudes = esEquipo ? todas : todas.filter((s) => s.solicitanteEmail === sesion.email);
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -32,7 +30,12 @@ export default async function Home({
           <div>
             <h1 className="text-lg font-semibold text-foreground">Solicitudes de Accesos</h1>
             <p className="text-xs text-muted-foreground">
-              {sesion.nombre} · {esEquipo ? "Equipo de Accesos" : "Solicitante"}
+              {sesion.nombre} ·{' '}
+              {sesion.rol === 'admin'
+                ? 'Administrador'
+                : sesion.rol === 'equipo'
+                  ? 'Equipo de Accesos'
+                  : 'Solicitante'}
             </p>
           </div>
           <form action={logoutAction}>
@@ -49,22 +52,22 @@ export default async function Home({
       <main className="mx-auto w-full max-w-4xl flex-1 space-y-8 px-6 py-8">
         {creada && (
           <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
-            Solicitud enviada. Se notificó (simulado) a accesos@capitalinteligente.cl.
+            Solicitud enviada. Se notificó a accesos@capitalinteligente.cl.
           </p>
         )}
 
         <DashboardTabs
-          tabInicial={creada ? "solicitudes" : undefined}
+          tabInicial={creada ? 'solicitudes' : undefined}
           tabs={[
             {
-              id: "nueva",
-              label: "Nueva solicitud",
+              id: 'nueva',
+              label: 'Nueva solicitud',
               content: <SolicitudForm plataformas={plataformasActivas} />,
             },
             {
-              id: "solicitudes",
-              label: esEquipo ? "Todas las solicitudes" : "Mis solicitudes",
-              badge: solicitudes.filter((s) => s.estado === "pendiente").length,
+              id: 'solicitudes',
+              label: esEquipo ? 'Todas las solicitudes' : 'Mis solicitudes',
+              badge: solicitudes.filter((s) => s.estado === 'pendiente').length,
               content: (
                 <SolicitudesList
                   solicitudes={solicitudes}
@@ -76,8 +79,8 @@ export default async function Home({
             ...(esEquipo
               ? [
                   {
-                    id: "equipos",
-                    label: "Equipos",
+                    id: 'equipos',
+                    label: 'Equipos',
                     content: (
                       <DirectorioEquipos
                         directorio={construirDirectorio(todas)}

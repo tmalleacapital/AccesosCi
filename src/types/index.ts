@@ -1,6 +1,6 @@
 // Tipos de dominio de "Solicitudes de Accesos".
 
-export type Rol = "solicitante" | "equipo";
+export type Rol = 'solicitante' | 'equipo' | 'admin';
 
 export interface Usuario {
   email: string; // siempre @capitalinteligente.cl
@@ -18,13 +18,9 @@ export interface Plataforma {
   activa: boolean;
 }
 
-export type TipoSolicitud = "crear" | "modificar" | "baja";
+export type TipoSolicitud = 'crear' | 'modificar' | 'baja';
 
-export type EstadoSolicitud =
-  | "pendiente"
-  | "en_proceso"
-  | "completada"
-  | "rechazada";
+export type EstadoSolicitud = 'pendiente' | 'en_proceso' | 'completada' | 'rechazada';
 
 /** Un acceso concreto pedido dentro de una solicitud. */
 export interface AccesoSolicitado {
@@ -36,9 +32,11 @@ export interface AccesoSolicitado {
 
 /** Datos requeridos al CREAR un acceso. */
 export interface DatosCreacion {
-  nombres: string;
-  apellidos: string;
-  telefono: string;
+  nombre: string;
+  segundoNombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  celular: string;
   /** Correo personal donde se envían las credenciales del nuevo @capitalinteligente.cl. */
   correoPersonal: string;
 }
@@ -67,6 +65,7 @@ export interface Solicitud {
   estado: EstadoSolicitud;
   datos: DatosSolicitud;
   accesos: AccesoSolicitado[];
+  comentario?: string;
   /**
    * Correo @capitalinteligente.cl que el Equipo asignó al completar una
    * solicitud de tipo "crear" (no existe hasta que la cuenta se crea de verdad).
@@ -74,12 +73,12 @@ export interface Solicitud {
   correoCorporativoAsignado?: string;
 }
 
-export type EstadoPersona = "activo" | "eliminado";
+export type EstadoPersona = 'activo' | 'eliminado';
 
 export interface AccesoDirectorio {
   plataformaId: string;
   fechaSolicitud: string; // ISO
-  estado: "activo" | "eliminado";
+  estado: 'activo' | 'eliminado';
 }
 
 /** Ficha de una persona del directorio, derivada de las solicitudes completadas. */

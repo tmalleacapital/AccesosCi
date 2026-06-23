@@ -1,14 +1,32 @@
 [
   {
+    "email": "tmallea@capitalinteligente.cl",
+    "nombre": "Tomás Mallea",
+    "rol": "admin",
+    "passwordHash": ""
+  },
+  {
+    "email": "mguzman@capitalinteligente.cl",
+    "nombre": "M. Guzmán",
+    "rol": "admin",
+    "passwordHash": ""
+  },
+  {
+    "email": "cpeede@capitalinteligente.cl",
+    "nombre": "C. Peede",
+    "rol": "admin",
+    "passwordHash": ""
+  },
+  {
     "email": "accesos@capitalinteligente.cl",
     "nombre": "Equipo de Accesos",
     "rol": "equipo",
-    "passwordHash": "f1c969ddf9ed3f85023c5f962660edde1fbbdcb84fd78e37064cf4dbb69128bf"
+    "passwordHash": ""
   },
   {
     "email": "solicitante@capitalinteligente.cl",
     "nombre": "Solicitante",
     "rol": "solicitante",
-    "passwordHash": "f1c969ddf9ed3f85023c5f962660edde1fbbdcb84fd78e37064cf4dbb69128bf"
+    "passwordHash": ""
   }
 ]

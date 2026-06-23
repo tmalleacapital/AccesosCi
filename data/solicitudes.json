@@ -1,5 +1,75 @@
 [
   {
+    "id": "CREA#3",
+    "tipo": "crear",
+    "solicitanteEmail": "tmallea@capitalinteligente.cl",
+    "fechaCreacion": "2026-06-23T21:59:14.239Z",
+    "estado": "pendiente",
+    "datos": {
+      "nombre": "Tomás",
+      "segundoNombre": "Sebastian",
+      "apellidoPaterno": "Mallea",
+      "apellidoMaterno": "Silva",
+      "celular": "+56959207461",
+      "correoPersonal": "tmallea@capitalinteligente.cl"
+    },
+    "accesos": [
+      {
+        "plataformaId": "gmail",
+        "fechaSolicitud": "2026-06-23T21:59:14.239Z",
+        "estado": "pendiente"
+      },
+      {
+        "plataformaId": "slack",
+        "fechaSolicitud": "2026-06-23T21:59:14.239Z",
+        "estado": "pendiente"
+      },
+      {
+        "plataformaId": "salesforce",
+        "fechaSolicitud": "2026-06-23T21:59:14.239Z",
+        "estado": "pendiente"
+      }
+    ],
+    "comentario": "Bajo el alero de martin guzman"
+  },
+  {
+    "id": "sol_abc9e2e3",
+    "tipo": "crear",
+    "solicitanteEmail": "tmallea@capitalinteligente.cl",
+    "fechaCreacion": "2026-06-23T21:40:38.081Z",
+    "estado": "rechazada",
+    "datos": {
+      "nombre": "Tomas",
+      "segundoNombre": "SEBA",
+      "apellidoPaterno": "Mallea",
+      "apellidoMaterno": "Prueba",
+      "celular": "+56959207461",
+      "correoPersonal": "tmallea@capitalinteligente.cl"
+    },
+    "accesos": [
+      {
+        "plataformaId": "gmail",
+        "fechaSolicitud": "2026-06-23T21:40:38.081Z",
+        "estado": "rechazada"
+      },
+      {
+        "plataformaId": "slack",
+        "fechaSolicitud": "2026-06-23T21:40:38.081Z",
+        "estado": "rechazada"
+      },
+      {
+        "plataformaId": "salesforce",
+        "fechaSolicitud": "2026-06-23T21:40:38.081Z",
+        "estado": "rechazada"
+      },
+      {
+        "plataformaId": "jira",
+        "fechaSolicitud": "2026-06-23T21:40:38.081Z",
+        "estado": "rechazada"
+      }
+    ]
+  },
+  {
     "id": "sol_7190fbff",
     "tipo": "crear",
     "solicitanteEmail": "solicitante@capitalinteligente.cl",

@@ -6,39 +6,40 @@ import type {
   Plataforma,
   Solicitud,
   TipoSolicitud,
-} from "@/types";
-import { cambiarEstadoAction } from "@/app/actions";
-import { agruparPorTipo } from "@/lib/services/solicitudes.service";
-import { DashboardTabs } from "@/components/DashboardTabs";
+} from '@/types';
+import { cambiarEstadoAction } from '@/app/actions';
+import { agruparPorTipo } from '@/lib/services/solicitudes.service';
+import { generarCorreoSugerido } from '@/lib/services/notificaciones.service';
+import { DashboardTabs } from '@/components/DashboardTabs';
 
 const ESTADO_ESTILO: Record<EstadoSolicitud, string> = {
   pendiente:
-    "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400",
+    'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400',
   en_proceso:
-    "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400",
+    'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400',
   completada:
-    "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400",
+    'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400',
   rechazada:
-    "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-400",
+    'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-400',
 };
 
 const ESTADO_LABEL: Record<EstadoSolicitud, string> = {
-  pendiente: "Pendiente",
-  en_proceso: "En proceso",
-  completada: "Completada",
-  rechazada: "Rechazada",
+  pendiente: 'Pendiente',
+  en_proceso: 'En proceso',
+  completada: 'Completada',
+  rechazada: 'Rechazada',
 };
 
 const TIPO_LABEL: Record<TipoSolicitud, string> = {
-  crear: "Crear",
-  modificar: "Modificar",
-  baja: "Baja",
+  crear: 'Crear',
+  modificar: 'Modificar',
+  baja: 'Baja',
 };
 
 const GRUPO_TITULO: Record<TipoSolicitud, string> = {
-  crear: "Creación de accesos",
-  modificar: "Modificación de accesos",
-  baja: "Eliminación de accesos",
+  crear: 'Creación de accesos',
+  modificar: 'Modificación de accesos',
+  baja: 'Eliminación de accesos',
 };
 
 function nombrePlataforma(id: string, plataformas: Plataforma[]): string {
@@ -46,26 +47,44 @@ function nombrePlataforma(id: string, plataformas: Plataforma[]): string {
 }
 
 function fmtFecha(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+  return new Date(iso).toLocaleDateString('es-CL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   });
 }
 
-function DatosSolicitudResumen({ solicitud }: { solicitud: Solicitud }) {
-  if (solicitud.tipo === "crear") {
+function DatosSolicitudResumen({
+  solicitud,
+  esEquipo,
+}: {
+  solicitud: Solicitud;
+  esEquipo: boolean;
+}) {
+  if (solicitud.tipo === 'crear') {
     const d = solicitud.datos as DatosCreacion;
+    const correoSugerido = generarCorreoSugerido(d.nombre, d.apellidoPaterno);
     return (
       <dl className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
-        <Dato label="Nombre" valor={`${d.nombres} ${d.apellidos}`} />
-        <Dato label="Teléfono" valor={d.telefono} />
+        <Dato
+          label="Nombre"
+          valor={`${d.nombre}${d.segundoNombre ? ` ${d.segundoNombre}` : ''} ${d.apellidoPaterno} ${d.apellidoMaterno}`}
+        />
+        <Dato label="Celular" valor={d.celular} />
         <Dato label="Correo personal" valor={d.correoPersonal} />
+        {esEquipo && (
+          <div className="sm:col-span-2 mt-1 flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-1.5 dark:border-sky-800 dark:bg-sky-950">
+            <span className="text-xs text-sky-600 dark:text-sky-400">Correo sugerido:</span>
+            <span className="font-mono text-sm font-semibold text-sky-700 dark:text-sky-300">
+              {correoSugerido}
+            </span>
+          </div>
+        )}
       </dl>
     );
   }
 
-  if (solicitud.tipo === "modificar") {
+  if (solicitud.tipo === 'modificar') {
     const d = solicitud.datos as DatosModificacion;
     return (
       <dl className="mt-3 grid gap-1 text-sm">
@@ -169,10 +188,18 @@ function SolicitudCard({
       </div>
 
       <p className="mt-2 text-sm text-muted-foreground">
-        Solicitante: <span className="text-foreground">{s.solicitanteEmail}</span>
+        <span className="font-mono text-xs text-muted-foreground">{s.id}</span>
+        {' · '}Solicitante: <span className="text-foreground">{s.solicitanteEmail}</span>
       </p>
 
-      <DatosSolicitudResumen solicitud={s} />
+      <DatosSolicitudResumen solicitud={s} esEquipo={esEquipo} />
+
+      {s.comentario && (
+        <div className="mt-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Comentario: </span>
+          {s.comentario}
+        </div>
+      )}
 
       {s.correoCorporativoAsignado && (
         <p className="mt-1 text-sm text-muted-foreground">
@@ -192,11 +219,17 @@ function SolicitudCard({
         ))}
       </div>
 
-      {esEquipo && s.estado !== "completada" && (
+      {esEquipo && s.estado !== 'completada' && (
         <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-4">
           <BotonEstado id={s.id} estado="en_proceso" label="Marcar en proceso" />
-          {s.tipo === "crear" ? (
-            <CompletarCreacionForm id={s.id} />
+          {s.tipo === 'crear' ? (
+            <CompletarCreacionForm
+              id={s.id}
+              correoSugerido={generarCorreoSugerido(
+                (s.datos as DatosCreacion).nombre,
+                (s.datos as DatosCreacion).apellidoPaterno,
+              )}
+            />
           ) : (
             <BotonEstado id={s.id} estado="completada" label="Marcar completada" />
           )}
@@ -207,16 +240,13 @@ function SolicitudCard({
   );
 }
 
-function CompletarCreacionForm({ id }: { id: string }) {
+function CompletarCreacionForm({ id, correoSugerido }: { id: string; correoSugerido: string }) {
   return (
     <form action={cambiarEstadoAction} className="flex items-end gap-2">
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="estado" value="completada" />
       <div>
-        <label
-          htmlFor={`correo-${id}`}
-          className="block text-[11px] text-muted-foreground"
-        >
+        <label htmlFor={`correo-${id}`} className="block text-[11px] text-muted-foreground">
           Correo asignado
         </label>
         <input
@@ -224,8 +254,8 @@ function CompletarCreacionForm({ id }: { id: string }) {
           name="correoCorporativoAsignado"
           type="email"
           required
-          placeholder="nombre.apellido@capitalinteligente.cl"
-          className="w-60 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground outline-none focus:border-primary"
+          defaultValue={correoSugerido}
+          className="w-64 rounded-md border border-sky-300 bg-background px-2 py-1.5 text-xs font-mono text-foreground outline-none focus:border-primary dark:border-sky-700"
         />
       </div>
       <button

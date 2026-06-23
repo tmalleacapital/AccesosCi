@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useActionState, useState } from "react";
-import type { Plataforma, TipoSolicitud } from "@/types";
-import { crearSolicitudAction } from "@/app/actions";
+import { useActionState, useState } from 'react';
+import type { Plataforma, TipoSolicitud } from '@/types';
+import { crearSolicitudAction } from '@/app/actions';
 
 const estadoInicial: { error?: string } = {};
 
 const inputClass =
-  "mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary";
+  'mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary';
 
 export function SolicitudForm({ plataformas }: { plataformas: Plataforma[] }) {
   const [estado, formAction, pending] = useActionState(crearSolicitudAction, estadoInicial);
-  const [tipo, setTipo] = useState<TipoSolicitud>("crear");
+  const [tipo, setTipo] = useState<TipoSolicitud>('crear');
 
   return (
     <form action={formAction} className="space-y-5 rounded-xl border border-border bg-card p-6">
@@ -32,20 +32,22 @@ export function SolicitudForm({ plataformas }: { plataformas: Plataforma[] }) {
         </select>
       </div>
 
-      {tipo === "crear" && (
+      {tipo === 'crear' && (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Campo label="Nombres" name="nombres" />
-          <Campo label="Apellidos" name="apellidos" />
-          <Campo label="Teléfono" name="telefono" placeholder="+56 9 1234 5678" />
+          <Campo label="Nombre" name="nombre" />
+          <Campo label="Segundo Nombre" name="segundoNombre" />
+          <Campo label="Apellido Paterno" name="apellidoPaterno" />
+          <Campo label="Apellido Materno" name="apellidoMaterno" />
+          <Campo label="Celular" name="celular" placeholder="+56 9 1234 5678" />
           <Campo
-            label="Correo personal (envío de credenciales)"
+            label="Correo Personal (envío de credenciales)"
             name="correoPersonal"
             type="email"
           />
         </div>
       )}
 
-      {tipo === "modificar" && (
+      {tipo === 'modificar' && (
         <div className="space-y-4">
           <Campo
             label="Correo @capitalinteligente.cl a modificar"
@@ -61,7 +63,7 @@ export function SolicitudForm({ plataformas }: { plataformas: Plataforma[] }) {
         </div>
       )}
 
-      {tipo === "baja" && (
+      {tipo === 'baja' && (
         <div className="space-y-4">
           <Campo
             label="Correo @capitalinteligente.cl a dar de baja"
@@ -91,6 +93,19 @@ export function SolicitudForm({ plataformas }: { plataformas: Plataforma[] }) {
         </div>
       </fieldset>
 
+      <div>
+        <label htmlFor="comentario" className="block text-sm font-medium text-foreground">
+          Comentarios <span className="text-muted-foreground font-normal">(opcional)</span>
+        </label>
+        <textarea
+          id="comentario"
+          name="comentario"
+          rows={3}
+          placeholder="Información adicional relevante para esta solicitud…"
+          className={`${inputClass} resize-none`}
+        />
+      </div>
+
       {estado?.error && (
         <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-400">
           {estado.error}
@@ -102,7 +117,7 @@ export function SolicitudForm({ plataformas }: { plataformas: Plataforma[] }) {
         disabled={pending}
         className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
       >
-        {pending ? "Enviando…" : "Enviar solicitud"}
+        {pending ? 'Enviando…' : 'Enviar solicitud'}
       </button>
     </form>
   );
@@ -111,7 +126,7 @@ export function SolicitudForm({ plataformas }: { plataformas: Plataforma[] }) {
 function Campo({
   label,
   name,
-  type = "text",
+  type = 'text',
   placeholder,
   required = true,
 }: {
