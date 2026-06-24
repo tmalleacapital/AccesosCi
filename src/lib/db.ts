@@ -124,6 +124,11 @@ export async function crearGrupoExtra(hojaId: string, nombre: string): Promise<v
   if (error) throw new Error(`crearGrupoExtra: ${error.message}`);
 }
 
+export async function eliminarGrupoExtra(id: string): Promise<void> {
+  const { error } = await supabase.from('grupos_extra').delete().eq('id', id);
+  if (error) throw new Error(`eliminarGrupoExtra: ${error.message}`);
+}
+
 export async function borrarEdicionesEliminado(correo: string): Promise<void> {
   const { error } = await supabase
     .from('correos_edits')

@@ -4,7 +4,12 @@ import { startTransition, useEffect, useMemo, useOptimistic, useRef, useState } 
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import correosData from '@/data/correos.json';
-import { crearGrupoAction, editarCorreoAction, eliminarCorreoAction } from '@/app/actions';
+import {
+  crearGrupoAction,
+  editarCorreoAction,
+  eliminarCorreoAction,
+  eliminarGrupoAction,
+} from '@/app/actions';
 import type { GrupoExtra } from '@/lib/db';
 
 interface Asesor {
@@ -498,17 +503,23 @@ function TablaGrupo({
   columnas,
   edits,
   eliminadas,
+  extraId,
   onEdit,
   onEditMetrica,
   onEliminar,
+  onNuevoBP,
+  onEliminarBP,
 }: {
   grupo: Grupo;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
   edits: Record<string, string>;
   eliminadas: Set<string>;
+  extraId?: string;
   onEdit: (correoOrig: string, campo: string, valor: string) => void;
   onEditMetrica: (label: string, valor: number) => void;
   onEliminar: (correo: string, nombre: string) => void;
+  onNuevoBP: () => void;
+  onEliminarBP?: (id: string) => void;
 }) {
   const metricas = useMemo(
     () => calcularMetricasDinamicas(grupo, edits, eliminadas),
@@ -519,30 +530,74 @@ function TablaGrupo({
     (a) => !eliminadas.has(a.correo) && edits[estKey(a.correo, 'eliminado')] !== 'true',
   );
 
+  const puedeEliminar = !!extraId && asesoresVisibles.length === 0;
+
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-sm font-semibold text-foreground">{grupo.nombre}</h3>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-          {asesoresVisibles.length}
-        </span>
-        {metricas.map((m) =>
-          m.label === 'Cuentas Portal Creadas' ? (
-            <BadgeNumeroEditable
-              key={m.label}
-              label={m.label}
-              valor={m.valor}
-              onSave={(v) => onEditMetrica(m.label, v)}
-            />
-          ) : (
-            <span
-              key={m.label}
-              className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400"
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold text-foreground">{grupo.nombre}</h3>
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            {asesoresVisibles.length}
+          </span>
+          {metricas.map((m) =>
+            m.label === 'Cuentas Portal Creadas' ? (
+              <BadgeNumeroEditable
+                key={m.label}
+                label={m.label}
+                valor={m.valor}
+                onSave={(v) => onEditMetrica(m.label, v)}
+              />
+            ) : (
+              <span
+                key={m.label}
+                className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400"
+              >
+                {m.label}: <strong>{m.valor}</strong>
+              </span>
+            ),
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onNuevoBP}
+            title="Crear nuevo BP en esta hoja"
+            className="flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground hover:bg-muted"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              {m.label}: <strong>{m.valor}</strong>
-            </span>
-          ),
-        )}
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Nuevo BP
+          </button>
+          {extraId && (
+            <button
+              type="button"
+              onClick={() => puedeEliminar && onEliminarBP?.(extraId)}
+              disabled={!puedeEliminar}
+              title={puedeEliminar ? 'Eliminar este BP' : 'El BP debe estar vacío para eliminarlo'}
+              className={cn(
+                'rounded-md border px-2.5 py-1 text-xs transition-colors',
+                puedeEliminar
+                  ? 'border-rose-200 bg-background text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40'
+                  : 'cursor-not-allowed border-border bg-background text-muted-foreground/40',
+              )}
+            >
+              Eliminar BP
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border border-border">
@@ -670,6 +725,7 @@ export function ListaCorreos({
   const [eliminadas, setEliminadas] = useState<Set<string>>(new Set());
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [creandoEquipo, setCreandoEquipo] = useState(false);
+  const [confirmandoEliminarGrupo, setConfirmandoEliminarGrupo] = useState<string | null>(null);
 
   const [edits, actualizarEdits] = useOptimistic(
     editsInicial,
@@ -682,7 +738,7 @@ export function ListaCorreos({
     () =>
       gruposExtra
         .filter((g) => g.hojaId === hoja.id)
-        .map((g) => ({ nombre: g.nombre, asesores: [], metricas: [] })),
+        .map((g) => ({ nombre: g.nombre, asesores: [], metricas: [], extraId: g.id })),
     [gruposExtra, hoja.id],
   );
 
@@ -768,6 +824,15 @@ export function ListaCorreos({
     });
   }
 
+  function handleConfirmarEliminarGrupo() {
+    if (!confirmandoEliminarGrupo) return;
+    const id = confirmandoEliminarGrupo;
+    setConfirmandoEliminarGrupo(null);
+    startTransition(() => {
+      eliminarGrupoAction(id);
+    });
+  }
+
   function handleEditMetrica(grupoNombre: string, label: string, valor: number) {
     const key = metricaKey(grupoNombre, label);
     startTransition(() => {
@@ -782,36 +847,13 @@ export function ListaCorreos({
         <p className="text-xs text-muted-foreground">
           {totalGeneral} correos en {data.hojas.length} hojas · actualizado {data.actualizado}
         </p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setCreandoEquipo(true)}
-            className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground hover:bg-muted"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Nuevo equipo
-          </button>
-          <input
-            type="search"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre o correo…"
-            className="w-56 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </div>
+        <input
+          type="search"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar por nombre o correo…"
+          className="w-56 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+        />
       </div>
 
       {/* Tabs por hoja */}
@@ -851,9 +893,12 @@ export function ListaCorreos({
               columnas={columnas}
               edits={edits}
               eliminadas={eliminadas}
+              extraId={'extraId' in g ? (g.extraId as string) : undefined}
               onEdit={handleEdit}
               onEditMetrica={(label, valor) => handleEditMetrica(g.nombre, label, valor)}
               onEliminar={handleSolicitarEliminar}
+              onNuevoBP={() => setCreandoEquipo(true)}
+              onEliminarBP={(id) => setConfirmandoEliminarGrupo(id)}
             />
           ))
         )}
@@ -865,6 +910,43 @@ export function ListaCorreos({
             onCrear={handleCrearEquipo}
             onCancelar={() => setCreandoEquipo(false)}
           />,
+          document.body,
+        )}
+
+      {confirmandoEliminarGrupo &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setConfirmandoEliminarGrupo(null)}
+          >
+            <div
+              className="w-80 space-y-4 rounded-xl border border-border bg-card p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-1">
+                <h2 className="text-base font-semibold text-foreground">¿Eliminar BP?</h2>
+                <p className="text-sm text-muted-foreground">
+                  Esta acción eliminará el equipo permanentemente. No se puede deshacer.
+                </p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmandoEliminarGrupo(null)}
+                  className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-muted"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmarEliminarGrupo}
+                  className="rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700"
+                >
+                  Sí, eliminar
+                </button>
+              </div>
+            </div>
+          </div>,
           document.body,
         )}
 
