@@ -1,43 +1,93 @@
-import "server-only";
-import { promises as fs } from "fs";
-import path from "path";
-import type { Plataforma, Solicitud, Usuario } from "@/types";
+import 'server-only';
+import { createClient } from '@supabase/supabase-js';
+import type { Plataforma, Solicitud, Usuario } from '@/types';
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
-async function leerJson<T>(archivo: string): Promise<T> {
-  const ruta = path.join(DATA_DIR, archivo);
-  const contenido = await fs.readFile(ruta, "utf-8");
-  return JSON.parse(contenido) as T;
+// Tipo interno que refleja las columnas en snake_case de la BD.
+interface SolicitudRow {
+  id: string;
+  tipo: string;
+  solicitante_email: string;
+  fecha_creacion: string;
+  estado: string;
+  datos: unknown;
+  accesos: unknown;
+  comentario: string | null;
+  correo_corporativo_asignado: string | null;
 }
 
-async function escribirJson<T>(archivo: string, datos: T): Promise<void> {
-  const ruta = path.join(DATA_DIR, archivo);
-  await fs.writeFile(ruta, JSON.stringify(datos, null, 2) + "\n", "utf-8");
+function rowToSolicitud(row: SolicitudRow): Solicitud {
+  return {
+    id: row.id,
+    tipo: row.tipo as Solicitud['tipo'],
+    solicitanteEmail: row.solicitante_email,
+    fechaCreacion: row.fecha_creacion,
+    estado: row.estado as Solicitud['estado'],
+    datos: row.datos as Solicitud['datos'],
+    accesos: row.accesos as Solicitud['accesos'],
+    ...(row.comentario ? { comentario: row.comentario } : {}),
+    ...(row.correo_corporativo_asignado
+      ? { correoCorporativoAsignado: row.correo_corporativo_asignado }
+      : {}),
+  };
 }
 
-export function leerUsuarios(): Promise<Usuario[]> {
-  return leerJson<Usuario[]>("usuarios.json");
+export async function leerUsuarios(): Promise<Usuario[]> {
+  const { data, error } = await supabase.from('usuarios').select('email, nombre, rol');
+  if (error) throw new Error(`leerUsuarios: ${error.message}`);
+  return (data ?? []).map((row) => ({
+    email: row.email as string,
+    nombre: row.nombre as string,
+    rol: row.rol as Usuario['rol'],
+    passwordHash: '',
+  }));
 }
 
-export function leerPlataformas(): Promise<Plataforma[]> {
-  return leerJson<Plataforma[]>("plataformas.json");
+export async function leerPlataformas(): Promise<Plataforma[]> {
+  const { data, error } = await supabase
+    .from('plataformas')
+    .select('id, nombre, facturable, activa')
+    .eq('activa', true)
+    .order('nombre');
+  if (error) throw new Error(`leerPlataformas: ${error.message}`);
+  return (data ?? []) as Plataforma[];
 }
 
-export function leerSolicitudes(): Promise<Solicitud[]> {
-  return leerJson<Solicitud[]>("solicitudes.json");
+export async function leerSolicitudes(): Promise<Solicitud[]> {
+  const { data, error } = await supabase
+    .from('solicitudes')
+    .select('*')
+    .order('fecha_creacion', { ascending: false });
+  if (error) throw new Error(`leerSolicitudes: ${error.message}`);
+  return (data ?? []).map((row) => rowToSolicitud(row as SolicitudRow));
 }
 
 export async function guardarSolicitud(solicitud: Solicitud): Promise<void> {
-  const solicitudes = await leerSolicitudes();
-  solicitudes.unshift(solicitud);
-  await escribirJson("solicitudes.json", solicitudes);
+  const { error } = await supabase.from('solicitudes').insert({
+    id: solicitud.id,
+    tipo: solicitud.tipo,
+    solicitante_email: solicitud.solicitanteEmail,
+    fecha_creacion: solicitud.fechaCreacion,
+    estado: solicitud.estado,
+    datos: solicitud.datos,
+    accesos: solicitud.accesos,
+    comentario: solicitud.comentario ?? null,
+    correo_corporativo_asignado: solicitud.correoCorporativoAsignado ?? null,
+  });
+  if (error) throw new Error(`guardarSolicitud: ${error.message}`);
 }
 
 export async function actualizarSolicitud(actualizada: Solicitud): Promise<void> {
-  const solicitudes = await leerSolicitudes();
-  const idx = solicitudes.findIndex((s) => s.id === actualizada.id);
-  if (idx === -1) throw new Error(`Solicitud no encontrada: ${actualizada.id}`);
-  solicitudes[idx] = actualizada;
-  await escribirJson("solicitudes.json", solicitudes);
+  const { error } = await supabase
+    .from('solicitudes')
+    .update({
+      estado: actualizada.estado,
+      datos: actualizada.datos,
+      accesos: actualizada.accesos,
+      comentario: actualizada.comentario ?? null,
+      correo_corporativo_asignado: actualizada.correoCorporativoAsignado ?? null,
+    })
+    .eq('id', actualizada.id);
+  if (error) throw new Error(`actualizarSolicitud: ${error.message}`);
 }
