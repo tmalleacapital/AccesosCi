@@ -277,6 +277,38 @@ function FilaAsesor({
 
 // ─── Tabla de grupo ──────────────────────────────────────────────────────────
 
+const LABELS_DINAMICOS = new Set(['Cuentas Portal Activo', 'Cuentas SalesCloud']);
+
+function calcularMetricasDinamicas(
+  grupo: Grupo,
+  edits: Record<string, string>,
+): { label: string; valor: number }[] {
+  const tieneLabel = new Set(grupo.metricas.map((m) => m.label));
+
+  // Aplicar edits sobre cada asesor para obtener sf y estado actuales
+  const asesores = grupo.asesores.map((a) => ({
+    sf: (edits[estKey(a.correo, 'sf')] ?? a.sf ?? '').trim(),
+    estado: (edits[estKey(a.correo, 'estado')] ?? a.estado ?? 'Activo').toLowerCase(),
+  }));
+
+  return grupo.metricas.map((m) => {
+    if (!LABELS_DINAMICOS.has(m.label)) return m; // Creadas es fijo (baseline)
+    if (m.label === 'Cuentas Portal Activo') {
+      return {
+        ...m,
+        valor: asesores.filter((a) => a.sf === 'Portal' && a.estado === 'activo').length,
+      };
+    }
+    if (m.label === 'Cuentas SalesCloud') {
+      return {
+        ...m,
+        valor: asesores.filter((a) => a.sf === 'Cloud' && a.estado === 'activo').length,
+      };
+    }
+    return m;
+  });
+}
+
 function TablaGrupo({
   grupo,
   columnas,
@@ -288,6 +320,8 @@ function TablaGrupo({
   edits: Record<string, string>;
   onEdit: (correoOrig: string, campo: string, valor: string) => void;
 }) {
+  const metricas = useMemo(() => calcularMetricasDinamicas(grupo, edits), [grupo, edits]);
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -295,7 +329,7 @@ function TablaGrupo({
         <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
           {grupo.asesores.length}
         </span>
-        {grupo.metricas.map((m) => (
+        {metricas.map((m) => (
           <span
             key={m.label}
             className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400"
