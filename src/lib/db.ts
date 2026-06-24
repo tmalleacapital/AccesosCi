@@ -100,6 +100,15 @@ export async function guardarEdicionCorreo(
   if (error) throw new Error(`guardarEdicionCorreo: ${error.message}`);
 }
 
+export async function borrarEdicionesEliminado(correo: string): Promise<void> {
+  const { error } = await supabase
+    .from('correos_edits')
+    .delete()
+    .eq('correo', correo)
+    .in('campo', ['eliminado', 'eliminado_por', 'eliminado_en']);
+  if (error) throw new Error(`borrarEdicionesEliminado: ${error.message}`);
+}
+
 export async function actualizarSolicitud(actualizada: Solicitud): Promise<void> {
   const { error } = await supabase
     .from('solicitudes')

@@ -7,6 +7,7 @@ import { SolicitudesList } from '@/components/SolicitudesList';
 import { DashboardTabs } from '@/components/DashboardTabs';
 import { DirectorioEquipos } from '@/components/DirectorioEquipos';
 import { ListaCorreos } from '@/components/ListaCorreos';
+import { EliminadosPanel } from '@/components/EliminadosPanel';
 import { construirDirectorio } from '@/lib/services/solicitudes.service';
 
 export default async function Home({
@@ -23,8 +24,12 @@ export default async function Home({
   const [plataformas, todas, edicionesCorreos] = await Promise.all([
     leerPlataformas(),
     leerSolicitudes(),
-    sesion.rol === 'admin' ? leerEdicionesCorreos() : Promise.resolve({}),
+    esEquipo ? leerEdicionesCorreos() : Promise.resolve({}),
   ]);
+
+  const countEliminados = Object.entries(edicionesCorreos).filter(
+    ([k, v]) => k.endsWith('||eliminado') && v === 'true',
+  ).length;
   const plataformasActivas = plataformas.filter((p) => p.activa);
   const solicitudes = esEquipo ? todas : todas.filter((s) => s.solicitanteEmail === sesion.email);
 
@@ -101,6 +106,18 @@ export default async function Home({
                     id: 'correos',
                     label: 'Lista de correos',
                     content: <ListaCorreos edits={edicionesCorreos} />,
+                  },
+                ]
+              : []),
+            ...(esEquipo
+              ? [
+                  {
+                    id: 'eliminados',
+                    label: 'Eliminados',
+                    badge: countEliminados || undefined,
+                    content: (
+                      <EliminadosPanel edits={edicionesCorreos} esAdmin={sesion.rol === 'admin'} />
+                    ),
                   },
                 ]
               : []),

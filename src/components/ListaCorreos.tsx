@@ -4,7 +4,7 @@ import { startTransition, useEffect, useMemo, useOptimistic, useRef, useState } 
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import correosData from '@/data/correos.json';
-import { editarCorreoAction } from '@/app/actions';
+import { editarCorreoAction, eliminarCorreoAction } from '@/app/actions';
 
 interface Asesor {
   nombre: string;
@@ -662,7 +662,7 @@ export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, st
       });
       startTransition(() => {
         actualizarEdits({ key: estKey(correo, 'eliminado'), valor: 'true' });
-        editarCorreoAction(correo, 'eliminado', 'true');
+        eliminarCorreoAction(correo);
       });
     }, UNDO_MS);
   }

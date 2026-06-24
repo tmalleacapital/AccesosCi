@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {
   actualizarSolicitud,
+  borrarEdicionesEliminado,
   guardarEdicionCorreo,
   guardarSolicitud,
   leerPlataformas,
@@ -144,6 +145,24 @@ export async function editarCorreoAction(
   const sesion = await getSesion();
   if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
   await guardarEdicionCorreo(correo, campo, valor);
+  revalidatePath('/');
+}
+
+export async function eliminarCorreoAction(correo: string): Promise<void> {
+  const sesion = await getSesion();
+  if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
+  await Promise.all([
+    guardarEdicionCorreo(correo, 'eliminado', 'true'),
+    guardarEdicionCorreo(correo, 'eliminado_por', sesion.email),
+    guardarEdicionCorreo(correo, 'eliminado_en', new Date().toISOString()),
+  ]);
+  revalidatePath('/');
+}
+
+export async function restaurarCorreoAction(correo: string): Promise<void> {
+  const sesion = await getSesion();
+  if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
+  await borrarEdicionesEliminado(correo);
   revalidatePath('/');
 }
 
