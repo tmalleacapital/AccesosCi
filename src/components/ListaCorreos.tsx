@@ -6,12 +6,13 @@ import { cn } from '@/lib/utils';
 import correosData from '@/data/correos.json';
 import {
   crearGrupoAction,
+  crearHojaAction,
   editarCorreoAction,
   eliminarCorreoAction,
   eliminarGrupoAction,
   ocultarGrupoAction,
 } from '@/app/actions';
-import type { GrupoExtra, MiembroExtra } from '@/lib/db';
+import type { GrupoExtra, HojaExtra, MiembroExtra } from '@/lib/db';
 
 interface Asesor {
   nombre: string;
@@ -678,9 +679,15 @@ function ModalEliminarBP({
 // ─── Modal nuevo equipo ───────────────────────────────────────────────────────
 
 function ModalNuevoEquipo({
+  titulo = 'Nuevo equipo',
+  descripcion = 'Ingresa el nombre del nuevo equipo.',
+  placeholder = 'Ej: Equipo Norte',
   onCrear,
   onCancelar,
 }: {
+  titulo?: string;
+  descripcion?: string;
+  placeholder?: string;
   onCrear: (nombre: string) => void;
   onCancelar: () => void;
 }) {
@@ -706,8 +713,8 @@ function ModalNuevoEquipo({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="space-y-1">
-          <h2 className="text-base font-semibold text-foreground">Nuevo equipo</h2>
-          <p className="text-sm text-muted-foreground">Ingresa el nombre del nuevo equipo.</p>
+          <h2 className="text-base font-semibold text-foreground">{titulo}</h2>
+          <p className="text-sm text-muted-foreground">{descripcion}</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -715,7 +722,7 @@ function ModalNuevoEquipo({
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             onKeyDown={(e) => e.key === 'Escape' && onCancelar()}
-            placeholder="Ej: Equipo Norte"
+            placeholder={placeholder}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           <div className="flex justify-end gap-2">
@@ -747,13 +754,24 @@ export function ListaCorreos({
   gruposExtra = [],
   gruposOcultos = [],
   miembrosExtra = [],
+  hojasExtra = [],
 }: {
   edits: Record<string, string>;
   gruposExtra?: GrupoExtra[];
   gruposOcultos?: { hojaId: string; nombre: string }[];
   miembrosExtra?: MiembroExtra[];
+  hojasExtra?: HojaExtra[];
 }) {
+  const todasHojas = useMemo(
+    () => [
+      ...data.hojas,
+      ...hojasExtra.map((h) => ({ id: h.id, nombre: h.nombre, grupos: [] as Grupo[] })),
+    ],
+    [hojasExtra],
+  );
+
   const [hojaActiva, setHojaActiva] = useState(data.hojas[0]?.id);
+  const [creandoMBP, setCreandoMBP] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [confirming, setConfirming] = useState<{ correo: string; nombre: string } | null>(null);
   const [undoItem, setUndoItem] = useState<{ correo: string; nombre: string } | null>(null);
@@ -771,7 +789,7 @@ export function ListaCorreos({
     (prev, update: { key: string; valor: string }) => ({ ...prev, [update.key]: update.valor }),
   );
 
-  const hoja = data.hojas.find((h) => h.id === hojaActiva) ?? data.hojas[0];
+  const hoja = todasHojas.find((h) => h.id === hojaActiva) ?? todasHojas[0];
 
   const gruposDinamicos = useMemo(
     () =>
@@ -799,6 +817,7 @@ export function ListaCorreos({
           slack: m.slack,
           sf: m.sf,
           tl: false,
+          fechaEliminacion: undefined as string | undefined,
         }));
       return extras.length > 0 ? { ...g, asesores: [...g.asesores, ...extras] } : g;
     });
@@ -815,14 +834,14 @@ export function ListaCorreos({
   }, [hoja, gruposDinamicos, ocultoSet, busqueda, miembrosExtra]);
 
   const columnas = useMemo(() => {
-    const all = hoja.grupos.flatMap((g) => g.asesores);
+    const all = grupos.flatMap((g) => g.asesores);
     return {
       jira: all.some((a) => a.jira),
       slack: all.some((a) => a.slack),
-      sf: all.some((a) => a.sf),
-      fecha: all.some((a) => a.fechaEliminacion),
+      sf: all.some((a) => !!a.sf),
+      fecha: all.some((a) => !!a.fechaEliminacion),
     };
-  }, [hoja]);
+  }, [grupos]);
 
   const totalHoja =
     hoja.grupos.reduce((n, g) => n + g.asesores.length, 0) +
@@ -895,6 +914,13 @@ export function ListaCorreos({
     });
   }
 
+  function handleCrearMBP(nombre: string) {
+    setCreandoMBP(false);
+    startTransition(() => {
+      crearHojaAction(nombre);
+    });
+  }
+
   function handleConfirmarEliminarGrupo() {
     if (!confirmandoEliminarGrupo) return;
     const { extraId, nombre } = confirmandoEliminarGrupo;
@@ -919,9 +945,33 @@ export function ListaCorreos({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">
-          {totalGeneral} correos en {data.hojas.length} hojas · actualizado {data.actualizado}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-muted-foreground">
+            {totalGeneral} correos en {data.hojas.length} hojas · actualizado{' '}
+            {formatFecha(data.actualizado)}
+          </p>
+          <button
+            type="button"
+            onClick={() => setCreandoMBP(true)}
+            className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground hover:bg-muted"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Nuevo MBP
+          </button>
+        </div>
         <input
           type="search"
           value={busqueda}
@@ -933,7 +983,7 @@ export function ListaCorreos({
 
       {/* Tabs por hoja */}
       <div className="flex flex-wrap gap-1 border-b border-border">
-        {data.hojas.map((h) => (
+        {todasHojas.map((h) => (
           <button
             key={h.id}
             type="button"
@@ -1007,6 +1057,18 @@ export function ListaCorreos({
           ))
         )}
       </div>
+
+      {creandoMBP &&
+        createPortal(
+          <ModalNuevoEquipo
+            titulo="Nuevo MBP"
+            descripcion="Ingresa el nombre del nuevo MBP (hoja de correos)."
+            placeholder="Ej: MBP Santiago"
+            onCrear={handleCrearMBP}
+            onCancelar={() => setCreandoMBP(false)}
+          />,
+          document.body,
+        )}
 
       {creandoEquipo &&
         createPortal(

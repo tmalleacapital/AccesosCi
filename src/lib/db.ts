@@ -100,6 +100,28 @@ export async function guardarEdicionCorreo(
   if (error) throw new Error(`guardarEdicionCorreo: ${error.message}`);
 }
 
+export interface HojaExtra {
+  id: string;
+  nombre: string;
+}
+
+export async function leerHojasExtra(): Promise<HojaExtra[]> {
+  const { data, error } = await supabase
+    .from('hojas_extra')
+    .select('id, nombre')
+    .order('created_at');
+  if (error) throw new Error(`leerHojasExtra: ${error.message}`);
+  return (data ?? []).map((row) => ({
+    id: row.id as string,
+    nombre: row.nombre as string,
+  }));
+}
+
+export async function crearHojaExtra(nombre: string): Promise<void> {
+  const { error } = await supabase.from('hojas_extra').insert({ nombre });
+  if (error) throw new Error(`crearHojaExtra: ${error.message}`);
+}
+
 export interface GrupoExtra {
   id: string;
   hojaId: string;
