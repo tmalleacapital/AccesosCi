@@ -91,6 +91,7 @@ export default async function Home({
                   solicitudes={solicitudes}
                   plataformas={plataformas}
                   esEquipo={esEquipo}
+                  gruposExtra={gruposExtra}
                 />
               ),
             },

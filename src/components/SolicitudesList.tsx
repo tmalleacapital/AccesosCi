@@ -9,8 +9,9 @@ import type {
 } from '@/types';
 import { cambiarEstadoAction } from '@/app/actions';
 import { agruparPorTipo } from '@/lib/services/solicitudes.service';
-import { generarCorreoSugerido } from '@/lib/services/notificaciones.service';
 import { DashboardTabs } from '@/components/DashboardTabs';
+import { CompletarCreacionForm } from '@/components/CompletarCreacionForm';
+import type { GrupoExtra } from '@/lib/db';
 
 const ESTADO_ESTILO: Record<EstadoSolicitud, string> = {
   pendiente:
@@ -54,32 +55,26 @@ function fmtFecha(iso: string): string {
   });
 }
 
-function DatosSolicitudResumen({
-  solicitud,
-  esEquipo,
-}: {
-  solicitud: Solicitud;
-  esEquipo: boolean;
-}) {
+function DatosSolicitudResumen({ solicitud }: { solicitud: Solicitud }) {
   if (solicitud.tipo === 'crear') {
     const d = solicitud.datos as DatosCreacion;
-    const correoSugerido = generarCorreoSugerido(d.nombre, d.apellidoPaterno);
+    const nombreCompleto = [d.nombre, d.segundoNombre, d.apellidoPaterno, d.apellidoMaterno]
+      .filter(Boolean)
+      .join(' ');
     return (
-      <dl className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
-        <Dato
-          label="Nombre"
-          valor={`${d.nombre}${d.segundoNombre ? ` ${d.segundoNombre}` : ''} ${d.apellidoPaterno} ${d.apellidoMaterno}`}
-        />
-        <Dato label="Celular" valor={d.celular} />
-        <Dato label="Correo personal" valor={d.correoPersonal} />
-        {esEquipo && (
-          <div className="sm:col-span-2 mt-1 flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-1.5 dark:border-sky-800 dark:bg-sky-950">
-            <span className="text-xs text-sky-600 dark:text-sky-400">Correo sugerido:</span>
-            <span className="font-mono text-sm font-semibold text-sky-700 dark:text-sky-300">
-              {correoSugerido}
-            </span>
-          </div>
-        )}
+      <dl className="mt-2 grid gap-y-1 gap-x-6 text-sm sm:grid-cols-2">
+        <div className="flex gap-2 sm:col-span-2">
+          <dt className="text-muted-foreground shrink-0">Nombre</dt>
+          <dd className="font-medium text-foreground">{nombreCompleto}</dd>
+        </div>
+        <div className="flex gap-2">
+          <dt className="text-muted-foreground shrink-0">Celular</dt>
+          <dd className="text-foreground">{d.celular}</dd>
+        </div>
+        <div className="flex gap-2">
+          <dt className="text-muted-foreground shrink-0">Correo personal</dt>
+          <dd className="text-foreground">{d.correoPersonal}</dd>
+        </div>
       </dl>
     );
   }
@@ -87,30 +82,33 @@ function DatosSolicitudResumen({
   if (solicitud.tipo === 'modificar') {
     const d = solicitud.datos as DatosModificacion;
     return (
-      <dl className="mt-3 grid gap-1 text-sm">
-        <Dato label="Correo corporativo" valor={d.correoCorporativo} />
-        <Dato label="Detalle" valor={d.detalle} />
+      <dl className="mt-2 grid gap-y-1 text-sm">
+        <div className="flex gap-2">
+          <dt className="text-muted-foreground shrink-0">Correo corporativo</dt>
+          <dd className="font-mono text-foreground">{d.correoCorporativo}</dd>
+        </div>
+        <div className="flex gap-2">
+          <dt className="text-muted-foreground shrink-0">Detalle</dt>
+          <dd className="text-foreground">{d.detalle}</dd>
+        </div>
       </dl>
     );
   }
 
   const d = solicitud.datos as DatosBaja;
   return (
-    <dl className="mt-3 grid gap-1 text-sm">
-      <Dato label="Correo a dar de baja" valor={d.correoCorporativo} />
+    <dl className="mt-2 grid gap-y-1 text-sm">
+      <div className="flex gap-2">
+        <dt className="text-muted-foreground shrink-0">Correo a dar de baja</dt>
+        <dd className="font-mono text-foreground">{d.correoCorporativo}</dd>
+      </div>
       {d.redistribucionSalesforce && (
-        <Dato label="Redistribución Salesforce" valor={d.redistribucionSalesforce} />
+        <div className="flex gap-2">
+          <dt className="text-muted-foreground shrink-0">Redistribución Salesforce</dt>
+          <dd className="text-foreground">{d.redistribucionSalesforce}</dd>
+        </div>
       )}
     </dl>
-  );
-}
-
-function Dato({ label, valor }: { label: string; valor: string }) {
-  return (
-    <div className="flex gap-2">
-      <dt className="text-muted-foreground">{label}:</dt>
-      <dd className="text-foreground">{valor}</dd>
-    </div>
   );
 }
 
@@ -118,10 +116,12 @@ export function SolicitudesList({
   solicitudes,
   plataformas,
   esEquipo,
+  gruposExtra = [],
 }: {
   solicitudes: Solicitud[];
   plataformas: Plataforma[];
   esEquipo: boolean;
+  gruposExtra?: GrupoExtra[];
 }) {
   if (solicitudes.length === 0) {
     return (
@@ -146,13 +146,14 @@ export function SolicitudesList({
               No hay solicitudes de este tipo.
             </p>
           ) : (
-            <ul className="space-y-4">
+            <ul className="space-y-3">
               {grupo.solicitudes.map((s) => (
                 <SolicitudCard
                   key={s.id}
                   solicitud={s}
                   plataformas={plataformas}
                   esEquipo={esEquipo}
+                  gruposExtra={gruposExtra}
                 />
               ))}
             </ul>
@@ -166,16 +167,21 @@ function SolicitudCard({
   solicitud: s,
   plataformas,
   esEquipo,
+  gruposExtra,
 }: {
   solicitud: Solicitud;
   plataformas: Plataforma[];
   esEquipo: boolean;
+  gruposExtra: GrupoExtra[];
 }) {
+  const puedeAccionar = esEquipo && s.estado !== 'completada' && s.estado !== 'rechazada';
+
   return (
-    <li className="rounded-xl border border-border bg-card p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <li className="overflow-hidden rounded-xl border border-border bg-card">
+      {/* Cabecera */}
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/20 px-5 py-3">
         <div className="flex items-center gap-2">
-          <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
+          <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
             {TIPO_LABEL[s.tipo]}
           </span>
           <span
@@ -184,87 +190,73 @@ function SolicitudCard({
             {ESTADO_LABEL[s.estado]}
           </span>
         </div>
-        <span className="text-xs text-muted-foreground">{fmtFecha(s.fechaCreacion)}</span>
-      </div>
-
-      <p className="mt-2 text-sm text-muted-foreground">
-        <span className="font-mono text-xs text-muted-foreground">{s.id}</span>
-        {' · '}Solicitante: <span className="text-foreground">{s.solicitanteEmail}</span>
-      </p>
-
-      <DatosSolicitudResumen solicitud={s} esEquipo={esEquipo} />
-
-      {s.comentario && (
-        <div className="mt-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">Comentario: </span>
-          {s.comentario}
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-xs text-muted-foreground">{s.id}</span>
+          <span className="text-xs text-muted-foreground">{fmtFecha(s.fechaCreacion)}</span>
         </div>
-      )}
-
-      {s.correoCorporativoAsignado && (
-        <p className="mt-1 text-sm text-muted-foreground">
-          Correo asignado: <span className="text-foreground">{s.correoCorporativoAsignado}</span>
-        </p>
-      )}
-
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {s.accesos.map((a) => (
-          <span
-            key={a.plataformaId}
-            className="rounded-md border border-border bg-background px-2 py-0.5 text-xs text-foreground"
-            title={`Solicitado: ${fmtFecha(a.fechaSolicitud)}`}
-          >
-            {nombrePlataforma(a.plataformaId, plataformas)}
-          </span>
-        ))}
       </div>
 
-      {esEquipo && s.estado !== 'completada' && (
-        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-4">
-          <BotonEstado id={s.id} estado="en_proceso" label="Marcar en proceso" />
+      {/* Cuerpo */}
+      <div className="space-y-3 px-5 py-4">
+        <p className="text-xs text-muted-foreground">
+          Solicitante: <span className="font-mono text-foreground">{s.solicitanteEmail}</span>
+        </p>
+
+        <DatosSolicitudResumen solicitud={s} />
+
+        {s.comentario && (
+          <p className="border-l-2 border-border pl-3 text-sm italic text-muted-foreground">
+            &ldquo;{s.comentario}&rdquo;
+          </p>
+        )}
+
+        {/* Plataformas solicitadas */}
+        {s.accesos.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {s.accesos.map((a) => (
+              <span
+                key={a.plataformaId}
+                className="rounded-md border border-border bg-background px-2 py-0.5 text-xs text-foreground"
+                title={`Solicitado: ${fmtFecha(a.fechaSolicitud)}`}
+              >
+                {nombrePlataforma(a.plataformaId, plataformas)}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Correo asignado (solo cuando completada) */}
+        {s.correoCorporativoAsignado && (
+          <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-800 dark:bg-emerald-950">
+            <span className="text-xs text-emerald-600 dark:text-emerald-400">Correo creado:</span>
+            <span className="font-mono text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+              {s.correoCorporativoAsignado}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Acciones */}
+      {puedeAccionar && (
+        <div className="space-y-2 border-t border-border bg-muted/10 px-5 py-3">
           {s.tipo === 'crear' ? (
-            <CompletarCreacionForm
-              id={s.id}
-              correoSugerido={generarCorreoSugerido(
-                (s.datos as DatosCreacion).nombre,
-                (s.datos as DatosCreacion).apellidoPaterno,
-              )}
-            />
+            <>
+              <CompletarCreacionForm id={s.id} gruposExtra={gruposExtra} />
+              <div className="flex gap-2 border-t border-border/50 pt-2">
+                <BotonEstado id={s.id} estado="en_proceso" label="Marcar en proceso" />
+                <BotonEstado id={s.id} estado="rechazada" label="Rechazar" />
+              </div>
+            </>
           ) : (
-            <BotonEstado id={s.id} estado="completada" label="Marcar completada" />
+            <div className="flex flex-wrap gap-2">
+              <BotonEstado id={s.id} estado="en_proceso" label="Marcar en proceso" />
+              <BotonEstado id={s.id} estado="completada" label="Marcar completada" />
+              <BotonEstado id={s.id} estado="rechazada" label="Rechazar" />
+            </div>
           )}
-          <BotonEstado id={s.id} estado="rechazada" label="Rechazar" />
         </div>
       )}
     </li>
-  );
-}
-
-function CompletarCreacionForm({ id, correoSugerido }: { id: string; correoSugerido: string }) {
-  return (
-    <form action={cambiarEstadoAction} className="flex items-end gap-2">
-      <input type="hidden" name="id" value={id} />
-      <input type="hidden" name="estado" value="completada" />
-      <div>
-        <label htmlFor={`correo-${id}`} className="block text-[11px] text-muted-foreground">
-          Correo asignado
-        </label>
-        <input
-          id={`correo-${id}`}
-          name="correoCorporativoAsignado"
-          type="email"
-          required
-          defaultValue={correoSugerido}
-          className="w-64 rounded-md border border-sky-300 bg-background px-2 py-1.5 text-xs font-mono text-foreground outline-none focus:border-primary dark:border-sky-700"
-        />
-      </div>
-      <button
-        type="submit"
-        className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
-      >
-        Marcar completada
-      </button>
-    </form>
   );
 }
 
