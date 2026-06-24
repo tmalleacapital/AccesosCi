@@ -204,6 +204,7 @@ export async function cambiarEstadoAction(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   const estado = String(formData.get('estado') ?? '') as EstadoSolicitud;
   const correoCorporativoAsignado = String(formData.get('correoCorporativoAsignado') ?? '').trim();
+  const passwordCorreo = String(formData.get('passwordCorreo') ?? '').trim() || undefined;
 
   const [solicitudes, plataformas] = await Promise.all([leerSolicitudes(), leerPlataformas()]);
   const solicitud = solicitudes.find((s) => s.id === id);
@@ -225,7 +226,7 @@ export async function cambiarEstadoAction(formData: FormData) {
     const correo = construirCorreoEnProceso(solicitudFinal);
     await enviarCorreo(correo.to, correo.subject, correo.body);
   } else if (estado === 'completada') {
-    const correo = construirCorreoCompletada(solicitudFinal, plataformas);
+    const correo = construirCorreoCompletada(solicitudFinal, plataformas, passwordCorreo);
     await enviarCorreo(correo.to, correo.subject, correo.body);
   }
 

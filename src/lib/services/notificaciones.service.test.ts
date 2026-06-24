@@ -109,4 +109,14 @@ describe('construirCorreoCompletada', () => {
     expect(correo.body).toContain('Gmail @capitalinteligente.cl');
     expect(correo.body).toContain('Slack');
   });
+
+  it('incluye la contraseña cuando se proporciona', () => {
+    const correo = construirCorreoCompletada(solicitudCompletada, plataformas, 'MiClave123!');
+    expect(correo.body).toContain('MiClave123!');
+  });
+
+  it('no muestra bloque de contraseña cuando no se proporciona', () => {
+    const correo = construirCorreoCompletada(solicitudCompletada, plataformas);
+    expect(correo.body).not.toContain('Contraseña');
+  });
 });

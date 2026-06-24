@@ -99,6 +99,7 @@ export function construirCorreoEnProceso(solicitud: Solicitud): CorreoSimulado {
 export function construirCorreoCompletada(
   solicitud: Solicitud,
   plataformas: Plataforma[],
+  passwordCorreo?: string,
 ): CorreoSimulado {
   const etiqueta = ETIQUETA_TIPO[solicitud.tipo] ?? solicitud.tipo;
   const fecha = new Date(solicitud.fechaCreacion).toLocaleString('es-CL', {
@@ -118,10 +119,21 @@ export function construirCorreoCompletada(
     ? `
       <table style="width:100%;border-collapse:collapse;margin-top:16px;background:#f0fdf4;border-radius:8px;overflow:hidden;border:1px solid #bbf7d0">
         <thead>
-          <tr><th style="padding:10px 12px;text-align:left;background:#dcfce7;font-size:0.85rem;color:#166534">✅ CORREO CORPORATIVO ASIGNADO</th></tr>
+          <tr><th colspan="2" style="padding:10px 12px;text-align:left;background:#dcfce7;font-size:0.85rem;color:#166534">✅ CREDENCIALES DE ACCESO</th></tr>
         </thead>
         <tbody>
-          <tr><td style="padding:12px;font-size:1.15rem;font-weight:700;color:#15803d;font-family:monospace">${solicitud.correoCorporativoAsignado}</td></tr>
+          <tr>
+            <td style="padding:8px 12px;font-weight:600;color:#166534;white-space:nowrap;width:1%">Correo</td>
+            <td style="padding:8px 12px;font-size:1.05rem;font-weight:700;color:#15803d;font-family:monospace">${solicitud.correoCorporativoAsignado}</td>
+          </tr>
+          ${
+            passwordCorreo
+              ? `<tr>
+            <td style="padding:8px 12px;font-weight:600;color:#166534;white-space:nowrap">Contraseña</td>
+            <td style="padding:8px 12px;font-size:1.05rem;font-weight:700;color:#15803d;font-family:monospace">${passwordCorreo}</td>
+          </tr>`
+              : ''
+          }
         </tbody>
       </table>`
     : '';

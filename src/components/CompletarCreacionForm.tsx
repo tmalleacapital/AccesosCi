@@ -91,6 +91,22 @@ export function CompletarCreacionForm({
         </div>
 
         <div>
+          <label
+            htmlFor={`password-${id}`}
+            className="block text-[11px] text-muted-foreground mb-1"
+          >
+            Contraseña
+          </label>
+          <input
+            id={`password-${id}`}
+            name="passwordCorreo"
+            type="text"
+            placeholder="Contraseña del correo"
+            className="w-44 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-mono text-foreground outline-none focus:border-sky-400 dark:focus:border-sky-600"
+          />
+        </div>
+
+        <div>
           <label htmlFor={`bp-${id}`} className="block text-[11px] text-muted-foreground mb-1">
             BP asignado
           </label>
