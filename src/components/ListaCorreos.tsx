@@ -1,6 +1,7 @@
 'use client';
 
-import { startTransition, useMemo, useOptimistic, useRef, useState } from 'react';
+import { startTransition, useEffect, useMemo, useOptimistic, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import correosData from '@/data/correos.json';
 import { editarCorreoAction } from '@/app/actions';
@@ -171,6 +172,93 @@ function ToggleBool({ valor, onToggle }: { valor: boolean; onToggle: () => void 
   );
 }
 
+// ─── Modal de confirmación ───────────────────────────────────────────────────
+
+function ConfirmModal({
+  nombre,
+  onConfirmar,
+  onCancelar,
+}: {
+  nombre: string;
+  onConfirmar: () => void;
+  onCancelar: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={onCancelar}
+    >
+      <div
+        className="w-80 space-y-4 rounded-xl border border-border bg-card p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold text-foreground">¿Eliminar asesor?</h2>
+          <p className="text-sm text-muted-foreground">
+            Se eliminará a <strong className="text-foreground">{nombre}</strong> de la lista.
+            Tendrás unos segundos para deshacer la acción.
+          </p>
+        </div>
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancelar}
+            className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirmar}
+            className="rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700"
+          >
+            Sí, eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Toast de deshacer ────────────────────────────────────────────────────────
+
+const UNDO_MS = 6000;
+
+function UndoToast({ nombre, onDeshacer }: { nombre: string; onDeshacer: () => void }) {
+  const [anchoPct, setAnchoPct] = useState(100);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setAnchoPct(0));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  return (
+    <div className="fixed bottom-5 right-5 z-50 w-72 overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <p className="text-sm text-foreground">
+          <strong>{nombre}</strong> eliminado
+        </p>
+        <button
+          type="button"
+          onClick={onDeshacer}
+          className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+        >
+          Deshacer
+        </button>
+      </div>
+      <div className="h-1 bg-muted">
+        <div
+          className="h-full bg-primary"
+          style={{
+            width: `${anchoPct}%`,
+            transition: `width ${UNDO_MS}ms linear`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── Fila de asesor ──────────────────────────────────────────────────────────
 
 function FilaAsesor({
@@ -178,11 +266,13 @@ function FilaAsesor({
   columnas,
   edits,
   onEdit,
+  onEliminar,
 }: {
   asesor: Asesor;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
   edits: Record<string, string>;
   onEdit: (campo: string, valor: string) => void;
+  onEliminar: () => void;
 }) {
   const orig = asesor.correo;
 
@@ -203,7 +293,7 @@ function FilaAsesor({
   const fecha = val('fechaEliminacion');
 
   return (
-    <tr className="border-b border-border last:border-0 hover:bg-muted/20">
+    <tr className="group border-b border-border last:border-0 hover:bg-muted/20">
       {/* Nombre */}
       <td className="px-3 py-2 text-foreground">
         <div className="flex items-center gap-1.5">
@@ -280,6 +370,34 @@ function FilaAsesor({
           />
         </td>
       )}
+
+      {/* Acciones */}
+      <td className="px-1 py-2 text-center">
+        <button
+          type="button"
+          title="Eliminar asesor"
+          onClick={onEliminar}
+          className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-rose-50 hover:text-rose-600 group-hover:opacity-100 dark:hover:bg-rose-950/40"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+          </svg>
+        </button>
+      </td>
     </tr>
   );
 }
@@ -289,11 +407,14 @@ function FilaAsesor({
 function calcularMetricasDinamicas(
   grupo: Grupo,
   edits: Record<string, string>,
+  eliminadas: Set<string>,
 ): { label: string; valor: number }[] {
-  const asesores = grupo.asesores.map((a) => ({
-    sf: (edits[estKey(a.correo, 'sf')] ?? a.sf ?? '').trim(),
-    estado: (edits[estKey(a.correo, 'estado')] ?? a.estado ?? 'Activo').toLowerCase(),
-  }));
+  const asesores = grupo.asesores
+    .filter((a) => !eliminadas.has(a.correo) && edits[estKey(a.correo, 'eliminado')] !== 'true')
+    .map((a) => ({
+      sf: (edits[estKey(a.correo, 'sf')] ?? a.sf ?? '').trim(),
+      estado: (edits[estKey(a.correo, 'estado')] ?? a.estado ?? 'Activo').toLowerCase(),
+    }));
 
   const portalActivo = asesores.filter((a) => a.sf === 'Portal' && a.estado === 'activo').length;
   const salesCloud = asesores.filter((a) => a.sf === 'Cloud' && a.estado === 'activo').length;
@@ -375,23 +496,34 @@ function TablaGrupo({
   grupo,
   columnas,
   edits,
+  eliminadas,
   onEdit,
   onEditMetrica,
+  onEliminar,
 }: {
   grupo: Grupo;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
   edits: Record<string, string>;
+  eliminadas: Set<string>;
   onEdit: (correoOrig: string, campo: string, valor: string) => void;
   onEditMetrica: (label: string, valor: number) => void;
+  onEliminar: (correo: string, nombre: string) => void;
 }) {
-  const metricas = useMemo(() => calcularMetricasDinamicas(grupo, edits), [grupo, edits]);
+  const metricas = useMemo(
+    () => calcularMetricasDinamicas(grupo, edits, eliminadas),
+    [grupo, edits, eliminadas],
+  );
+
+  const asesoresVisibles = grupo.asesores.filter(
+    (a) => !eliminadas.has(a.correo) && edits[estKey(a.correo, 'eliminado')] !== 'true',
+  );
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-semibold text-foreground">{grupo.nombre}</h3>
         <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-          {grupo.asesores.length}
+          {asesoresVisibles.length}
         </span>
         {metricas.map((m) =>
           m.label === 'Cuentas Portal Creadas' ? (
@@ -433,16 +565,20 @@ function TablaGrupo({
                   Fecha baja
                 </th>
               )}
+              <th className="w-8" />
             </tr>
           </thead>
           <tbody>
-            {grupo.asesores.map((a, i) => (
+            {asesoresVisibles.map((a, i) => (
               <FilaAsesor
                 key={`${a.correo}-${i}`}
                 asesor={a}
                 columnas={columnas}
                 edits={edits}
                 onEdit={(campo, valor) => onEdit(a.correo, campo, valor)}
+                onEliminar={() =>
+                  onEliminar(a.correo, edits[estKey(a.correo, 'nombre')] ?? a.nombre)
+                }
               />
             ))}
           </tbody>
@@ -457,6 +593,10 @@ function TablaGrupo({
 export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, string> }) {
   const [hojaActiva, setHojaActiva] = useState(data.hojas[0]?.id);
   const [busqueda, setBusqueda] = useState('');
+  const [confirming, setConfirming] = useState<{ correo: string; nombre: string } | null>(null);
+  const [undoItem, setUndoItem] = useState<{ correo: string; nombre: string } | null>(null);
+  const [eliminadas, setEliminadas] = useState<Set<string>>(new Set());
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [edits, actualizarEdits] = useOptimistic(
     editsInicial,
@@ -500,6 +640,43 @@ export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, st
       actualizarEdits({ key, valor });
       editarCorreoAction(correoOrig, campo, valor);
     });
+  }
+
+  function handleSolicitarEliminar(correo: string, nombre: string) {
+    setConfirming({ correo, nombre });
+  }
+
+  function handleConfirmarEliminar() {
+    if (!confirming) return;
+    const { correo, nombre } = confirming;
+    setConfirming(null);
+    setEliminadas((prev) => new Set(prev).add(correo));
+    setUndoItem({ correo, nombre });
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => {
+      setUndoItem(null);
+      setEliminadas((prev) => {
+        const next = new Set(prev);
+        next.delete(correo);
+        return next;
+      });
+      startTransition(() => {
+        actualizarEdits({ key: estKey(correo, 'eliminado'), valor: 'true' });
+        editarCorreoAction(correo, 'eliminado', 'true');
+      });
+    }, UNDO_MS);
+  }
+
+  function handleDeshacer() {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    if (undoItem) {
+      setEliminadas((prev) => {
+        const next = new Set(prev);
+        next.delete(undoItem.correo);
+        return next;
+      });
+    }
+    setUndoItem(null);
   }
 
   function handleEditMetrica(grupoNombre: string, label: string, valor: number) {
@@ -561,12 +738,30 @@ export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, st
               grupo={g}
               columnas={columnas}
               edits={edits}
+              eliminadas={eliminadas}
               onEdit={handleEdit}
               onEditMetrica={(label, valor) => handleEditMetrica(g.nombre, label, valor)}
+              onEliminar={handleSolicitarEliminar}
             />
           ))
         )}
       </div>
+
+      {confirming &&
+        createPortal(
+          <ConfirmModal
+            nombre={confirming.nombre}
+            onConfirmar={handleConfirmarEliminar}
+            onCancelar={() => setConfirming(null)}
+          />,
+          document.body,
+        )}
+
+      {undoItem &&
+        createPortal(
+          <UndoToast nombre={undoItem.nombre} onDeshacer={handleDeshacer} />,
+          document.body,
+        )}
     </div>
   );
 }
