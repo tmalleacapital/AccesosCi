@@ -101,6 +101,7 @@ export function CompletarCreacionForm({
             id={`password-${id}`}
             name="passwordCorreo"
             type="text"
+            required
             placeholder="Contraseña del correo"
             className="w-44 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-mono text-foreground outline-none focus:border-sky-400 dark:focus:border-sky-600"
           />
