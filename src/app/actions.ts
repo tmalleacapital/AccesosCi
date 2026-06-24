@@ -222,8 +222,6 @@ export async function cambiarEstadoAction(formData: FormData) {
   const passwordCorreo = String(formData.get('passwordCorreo') ?? '').trim() || undefined;
   const bpHojaId = String(formData.get('bpHojaId') ?? '').trim() || undefined;
   const bpGrupoNombre = String(formData.get('bpGrupoNombre') ?? '').trim() || undefined;
-  const bpSlack = formData.get('bpSlack') === 'true';
-  const bpJira = formData.get('bpJira') === 'true';
 
   const [solicitudes, plataformas] = await Promise.all([leerSolicitudes(), leerPlataformas()]);
   const solicitud = solicitudes.find((s) => s.id === id);
@@ -253,13 +251,22 @@ export async function cambiarEstadoAction(formData: FormData) {
       const nombreCompleto = [d.nombre, d.segundoNombre, d.apellidoPaterno, d.apellidoMaterno]
         .filter(Boolean)
         .join(' ');
+
+      const idsAccesos = new Set(solicitudFinal.accesos.map((a) => a.plataformaId));
+      const tieneSlack = plataformas.some(
+        (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('slack'),
+      );
+      const tieneJira = plataformas.some(
+        (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('jira'),
+      );
+
       await crearMiembroExtra(
         bpHojaId,
         bpGrupoNombre,
         nombreCompleto,
         correoCorporativoAsignado,
-        bpSlack,
-        bpJira,
+        tieneSlack,
+        tieneJira,
         '',
       );
     }
