@@ -34,6 +34,11 @@ function etiquetaHoja(nombre: string): string {
   return nombre.replace(/^MBP\s+/, '');
 }
 
+function formatFecha(raw: string): string {
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : raw;
+}
+
 function estKey(correo: string, campo: string) {
   return `${correo}||${campo}`;
 }
@@ -267,9 +272,9 @@ function FilaAsesor({
 
       {/* Fecha baja */}
       {columnas.fecha && (
-        <td className="px-3 py-2">
+        <td className="whitespace-nowrap px-3 py-2">
           <CeldaTexto
-            valor={fecha}
+            valor={formatFecha(fecha)}
             onSave={(v) => onEdit('fechaEliminacion', v)}
             className="text-xs text-muted-foreground"
           />
@@ -424,7 +429,9 @@ function TablaGrupo({
                 <th className="w-[95px] px-3 py-2 font-semibold text-foreground">Salesforce</th>
               )}
               {columnas.fecha && (
-                <th className="w-[88px] px-3 py-2 font-semibold text-foreground">Fecha baja</th>
+                <th className="w-[104px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
+                  Fecha baja
+                </th>
               )}
             </tr>
           </thead>
