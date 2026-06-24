@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import {
   actualizarSolicitud,
   borrarEdicionesEliminado,
+  crearGrupoExtra,
   guardarEdicionCorreo,
   guardarSolicitud,
   leerPlataformas,
@@ -163,6 +164,14 @@ export async function restaurarCorreoAction(correo: string): Promise<void> {
   const sesion = await getSesion();
   if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
   await borrarEdicionesEliminado(correo);
+  revalidatePath('/');
+}
+
+export async function crearGrupoAction(hojaId: string, nombre: string): Promise<void> {
+  const sesion = await getSesion();
+  if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
+  if (!nombre.trim()) throw new Error('El nombre del equipo no puede estar vacío.');
+  await crearGrupoExtra(hojaId, nombre.trim());
   revalidatePath('/');
 }
 

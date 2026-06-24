@@ -100,6 +100,30 @@ export async function guardarEdicionCorreo(
   if (error) throw new Error(`guardarEdicionCorreo: ${error.message}`);
 }
 
+export interface GrupoExtra {
+  id: string;
+  hojaId: string;
+  nombre: string;
+}
+
+export async function leerGruposExtra(): Promise<GrupoExtra[]> {
+  const { data, error } = await supabase
+    .from('grupos_extra')
+    .select('id, hoja_id, nombre')
+    .order('created_at');
+  if (error) throw new Error(`leerGruposExtra: ${error.message}`);
+  return (data ?? []).map((row) => ({
+    id: row.id as string,
+    hojaId: row.hoja_id as string,
+    nombre: row.nombre as string,
+  }));
+}
+
+export async function crearGrupoExtra(hojaId: string, nombre: string): Promise<void> {
+  const { error } = await supabase.from('grupos_extra').insert({ hoja_id: hojaId, nombre });
+  if (error) throw new Error(`crearGrupoExtra: ${error.message}`);
+}
+
 export async function borrarEdicionesEliminado(correo: string): Promise<void> {
   const { error } = await supabase
     .from('correos_edits')

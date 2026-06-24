@@ -4,7 +4,8 @@ import { startTransition, useEffect, useMemo, useOptimistic, useRef, useState } 
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import correosData from '@/data/correos.json';
-import { editarCorreoAction, eliminarCorreoAction } from '@/app/actions';
+import { crearGrupoAction, editarCorreoAction, eliminarCorreoAction } from '@/app/actions';
+import type { GrupoExtra } from '@/lib/db';
 
 interface Asesor {
   nombre: string;
@@ -588,15 +589,87 @@ function TablaGrupo({
   );
 }
 
+// ─── Modal nuevo equipo ───────────────────────────────────────────────────────
+
+function ModalNuevoEquipo({
+  onCrear,
+  onCancelar,
+}: {
+  onCrear: (nombre: string) => void;
+  onCancelar: () => void;
+}) {
+  const [nombre, setNombre] = useState('');
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    ref.current?.focus();
+  }, []);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (nombre.trim()) onCrear(nombre.trim());
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={onCancelar}
+    >
+      <div
+        className="w-80 space-y-4 rounded-xl border border-border bg-card p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold text-foreground">Nuevo equipo</h2>
+          <p className="text-sm text-muted-foreground">Ingresa el nombre del nuevo equipo.</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            ref={ref}
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            onKeyDown={(e) => e.key === 'Escape' && onCancelar()}
+            placeholder="Ej: Equipo Norte"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onCancelar}
+              className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-muted"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={!nombre.trim()}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
+            >
+              Crear
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Componente principal ────────────────────────────────────────────────────
 
-export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, string> }) {
+export function ListaCorreos({
+  edits: editsInicial,
+  gruposExtra = [],
+}: {
+  edits: Record<string, string>;
+  gruposExtra?: GrupoExtra[];
+}) {
   const [hojaActiva, setHojaActiva] = useState(data.hojas[0]?.id);
   const [busqueda, setBusqueda] = useState('');
   const [confirming, setConfirming] = useState<{ correo: string; nombre: string } | null>(null);
   const [undoItem, setUndoItem] = useState<{ correo: string; nombre: string } | null>(null);
   const [eliminadas, setEliminadas] = useState<Set<string>>(new Set());
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [creandoEquipo, setCreandoEquipo] = useState(false);
 
   const [edits, actualizarEdits] = useOptimistic(
     editsInicial,
@@ -605,10 +678,19 @@ export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, st
 
   const hoja = data.hojas.find((h) => h.id === hojaActiva) ?? data.hojas[0];
 
+  const gruposDinamicos = useMemo(
+    () =>
+      gruposExtra
+        .filter((g) => g.hojaId === hoja.id)
+        .map((g) => ({ nombre: g.nombre, asesores: [], metricas: [] })),
+    [gruposExtra, hoja.id],
+  );
+
   const grupos = useMemo(() => {
+    const todos = [...hoja.grupos, ...gruposDinamicos];
     const q = busqueda.trim().toLowerCase();
-    if (!q) return hoja.grupos;
-    return hoja.grupos
+    if (!q) return todos;
+    return todos
       .map((g) => ({
         ...g,
         asesores: g.asesores.filter(
@@ -616,7 +698,7 @@ export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, st
         ),
       }))
       .filter((g) => g.asesores.length > 0);
-  }, [hoja, busqueda]);
+  }, [hoja, gruposDinamicos, busqueda]);
 
   const columnas = useMemo(() => {
     const all = hoja.grupos.flatMap((g) => g.asesores);
@@ -679,6 +761,13 @@ export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, st
     setUndoItem(null);
   }
 
+  function handleCrearEquipo(nombre: string) {
+    setCreandoEquipo(false);
+    startTransition(() => {
+      crearGrupoAction(hoja.id, nombre);
+    });
+  }
+
   function handleEditMetrica(grupoNombre: string, label: string, valor: number) {
     const key = metricaKey(grupoNombre, label);
     startTransition(() => {
@@ -727,7 +816,7 @@ export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, st
       </p>
 
       <div className="space-y-6">
-        {grupos.length === 0 ? (
+        {grupos.length === 0 && !busqueda ? null : grupos.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
             Sin resultados para «{busqueda}».
           </p>
@@ -745,7 +834,40 @@ export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, st
             />
           ))
         )}
+
+        {!busqueda && (
+          <button
+            type="button"
+            onClick={() => setCreandoEquipo(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border py-3 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Nuevo equipo
+          </button>
+        )}
       </div>
+
+      {creandoEquipo &&
+        createPortal(
+          <ModalNuevoEquipo
+            onCrear={handleCrearEquipo}
+            onCancelar={() => setCreandoEquipo(false)}
+          />,
+          document.body,
+        )}
 
       {confirming &&
         createPortal(
