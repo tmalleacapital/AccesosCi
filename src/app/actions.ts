@@ -8,6 +8,7 @@ import {
   crearGrupoExtra,
   eliminarGrupoExtra,
   guardarEdicionCorreo,
+  ocultarGrupo,
   guardarSolicitud,
   leerPlataformas,
   leerSolicitudes,
@@ -180,6 +181,13 @@ export async function eliminarGrupoAction(id: string): Promise<void> {
   const sesion = await getSesion();
   if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
   await eliminarGrupoExtra(id);
+  revalidatePath('/');
+}
+
+export async function ocultarGrupoAction(hojaId: string, nombre: string): Promise<void> {
+  const sesion = await getSesion();
+  if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
+  await ocultarGrupo(hojaId, nombre);
   revalidatePath('/');
 }
 

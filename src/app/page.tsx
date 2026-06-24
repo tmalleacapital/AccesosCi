@@ -1,5 +1,11 @@
 import { redirect } from 'next/navigation';
-import { leerEdicionesCorreos, leerGruposExtra, leerPlataformas, leerSolicitudes } from '@/lib/db';
+import {
+  leerEdicionesCorreos,
+  leerGruposExtra,
+  leerGruposOcultos,
+  leerPlataformas,
+  leerSolicitudes,
+} from '@/lib/db';
 import { getSesion } from '@/lib/session';
 import { logoutAction } from '@/app/actions';
 import { SolicitudForm } from '@/components/SolicitudForm';
@@ -21,11 +27,12 @@ export default async function Home({
   const { creada } = await searchParams;
   const esEquipo = sesion.rol === 'equipo' || sesion.rol === 'admin';
 
-  const [plataformas, todas, edicionesCorreos, gruposExtra] = await Promise.all([
+  const [plataformas, todas, edicionesCorreos, gruposExtra, gruposOcultos] = await Promise.all([
     leerPlataformas(),
     leerSolicitudes(),
     esEquipo ? leerEdicionesCorreos() : Promise.resolve({}),
     sesion.rol === 'admin' ? leerGruposExtra() : Promise.resolve([]),
+    sesion.rol === 'admin' ? leerGruposOcultos() : Promise.resolve([]),
   ]);
 
   const countEliminados = Object.entries(edicionesCorreos).filter(
@@ -106,7 +113,13 @@ export default async function Home({
                   {
                     id: 'correos',
                     label: 'Lista de correos',
-                    content: <ListaCorreos edits={edicionesCorreos} gruposExtra={gruposExtra} />,
+                    content: (
+                      <ListaCorreos
+                        edits={edicionesCorreos}
+                        gruposExtra={gruposExtra}
+                        gruposOcultos={gruposOcultos}
+                      />
+                    ),
                   },
                 ]
               : []),

@@ -9,6 +9,7 @@ import {
   editarCorreoAction,
   eliminarCorreoAction,
   eliminarGrupoAction,
+  ocultarGrupoAction,
 } from '@/app/actions';
 import type { GrupoExtra } from '@/lib/db';
 
@@ -602,21 +603,19 @@ function ModalEliminarBP({
   onCerrar,
 }: {
   bps: { nombre: string; correos: number; extraId?: string }[];
-  onEliminar: (id: string) => void;
+  onEliminar: (info: { extraId?: string; nombre: string }) => void;
   onCerrar: () => void;
 }) {
   const [advertencia, setAdvertencia] = useState<string | null>(null);
 
-  const bpsDinamicos = bps.filter((bp) => bp.extraId);
-
-  function handleSeleccionar(bp: { nombre: string; correos: number; extraId: string }) {
+  function handleSeleccionar(bp: { nombre: string; correos: number; extraId?: string }) {
     if (bp.correos > 0) {
       setAdvertencia(
         `"${bp.nombre}" tiene ${bp.correos} correo${bp.correos !== 1 ? 's' : ''}. Debes eliminar todos los correos antes de poder eliminar el BP.`,
       );
       return;
     }
-    onEliminar(bp.extraId);
+    onEliminar({ extraId: bp.extraId, nombre: bp.nombre });
   }
 
   return (
@@ -634,34 +633,26 @@ function ModalEliminarBP({
         </div>
 
         <div className="space-y-1.5">
-          {bpsDinamicos.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              No hay BPs creados manualmente que se puedan eliminar.
-            </p>
-          ) : (
-            bpsDinamicos.map((bp) => (
-              <div
-                key={bp.nombre}
-                className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
-              >
-                <div>
-                  <p className="text-sm font-medium text-foreground">{bp.nombre}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {bp.correos} correo{bp.correos !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleSeleccionar(bp as { nombre: string; correos: number; extraId: string })
-                  }
-                  className="rounded-md border border-rose-200 bg-background px-2.5 py-1 text-xs text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40"
-                >
-                  Eliminar
-                </button>
+          {bps.map((bp) => (
+            <div
+              key={bp.nombre}
+              className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
+            >
+              <div>
+                <p className="text-sm font-medium text-foreground">{bp.nombre}</p>
+                <p className="text-xs text-muted-foreground">
+                  {bp.correos} correo{bp.correos !== 1 ? 's' : ''}
+                </p>
               </div>
-            ))
-          )}
+              <button
+                type="button"
+                onClick={() => handleSeleccionar(bp)}
+                className="rounded-md border border-rose-200 bg-background px-2.5 py-1 text-xs text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40"
+              >
+                Eliminar
+              </button>
+            </div>
+          ))}
         </div>
 
         {advertencia && (
@@ -754,9 +745,11 @@ function ModalNuevoEquipo({
 export function ListaCorreos({
   edits: editsInicial,
   gruposExtra = [],
+  gruposOcultos = [],
 }: {
   edits: Record<string, string>;
   gruposExtra?: GrupoExtra[];
+  gruposOcultos?: { hojaId: string; nombre: string }[];
 }) {
   const [hojaActiva, setHojaActiva] = useState(data.hojas[0]?.id);
   const [busqueda, setBusqueda] = useState('');
@@ -765,7 +758,10 @@ export function ListaCorreos({
   const [eliminadas, setEliminadas] = useState<Set<string>>(new Set());
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [creandoEquipo, setCreandoEquipo] = useState(false);
-  const [confirmandoEliminarGrupo, setConfirmandoEliminarGrupo] = useState<string | null>(null);
+  const [confirmandoEliminarGrupo, setConfirmandoEliminarGrupo] = useState<{
+    extraId?: string;
+    nombre: string;
+  } | null>(null);
   const [mostrandoEliminarBP, setMostrandoEliminarBP] = useState(false);
 
   const [edits, actualizarEdits] = useOptimistic(
@@ -783,8 +779,14 @@ export function ListaCorreos({
     [gruposExtra, hoja.id],
   );
 
+  const ocultoSet = useMemo(
+    () => new Set(gruposOcultos.filter((g) => g.hojaId === hoja.id).map((g) => g.nombre)),
+    [gruposOcultos, hoja.id],
+  );
+
   const grupos = useMemo(() => {
-    const todos = [...hoja.grupos, ...gruposDinamicos];
+    const estaticos = hoja.grupos.filter((g) => !ocultoSet.has(g.nombre));
+    const todos = [...estaticos, ...gruposDinamicos];
     const q = busqueda.trim().toLowerCase();
     if (!q) return todos;
     return todos
@@ -795,7 +797,7 @@ export function ListaCorreos({
         ),
       }))
       .filter((g) => g.asesores.length > 0);
-  }, [hoja, gruposDinamicos, busqueda]);
+  }, [hoja, gruposDinamicos, ocultoSet, busqueda]);
 
   const columnas = useMemo(() => {
     const all = hoja.grupos.flatMap((g) => g.asesores);
@@ -878,10 +880,14 @@ export function ListaCorreos({
 
   function handleConfirmarEliminarGrupo() {
     if (!confirmandoEliminarGrupo) return;
-    const id = confirmandoEliminarGrupo;
+    const { extraId, nombre } = confirmandoEliminarGrupo;
     setConfirmandoEliminarGrupo(null);
     startTransition(() => {
-      eliminarGrupoAction(id);
+      if (extraId) {
+        eliminarGrupoAction(extraId);
+      } else {
+        ocultarGrupoAction(hoja.id, nombre);
+      }
     });
   }
 
@@ -998,9 +1004,9 @@ export function ListaCorreos({
         createPortal(
           <ModalEliminarBP
             bps={bpsInfo}
-            onEliminar={(id) => {
+            onEliminar={({ extraId, nombre }) => {
               setMostrandoEliminarBP(false);
-              setConfirmandoEliminarGrupo(id);
+              setConfirmandoEliminarGrupo({ extraId, nombre });
             }}
             onCerrar={() => setMostrandoEliminarBP(false)}
           />,

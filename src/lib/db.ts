@@ -129,6 +129,20 @@ export async function eliminarGrupoExtra(id: string): Promise<void> {
   if (error) throw new Error(`eliminarGrupoExtra: ${error.message}`);
 }
 
+export async function leerGruposOcultos(): Promise<{ hojaId: string; nombre: string }[]> {
+  const { data, error } = await supabase.from('grupos_ocultos').select('hoja_id, nombre');
+  if (error) throw new Error(`leerGruposOcultos: ${error.message}`);
+  return (data ?? []).map((row) => ({
+    hojaId: row.hoja_id as string,
+    nombre: row.nombre as string,
+  }));
+}
+
+export async function ocultarGrupo(hojaId: string, nombre: string): Promise<void> {
+  const { error } = await supabase.from('grupos_ocultos').insert({ hoja_id: hojaId, nombre });
+  if (error) throw new Error(`ocultarGrupo: ${error.message}`);
+}
+
 export async function borrarEdicionesEliminado(correo: string): Promise<void> {
   const { error } = await supabase
     .from('correos_edits')
