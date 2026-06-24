@@ -80,6 +80,44 @@ function bloqueDatosHtml(solicitud: Solicitud): string {
   ]);
 }
 
+export function construirCorreoConfirmacion(
+  solicitud: Solicitud,
+  plataformas: Plataforma[],
+): CorreoSimulado {
+  const etiqueta = ETIQUETA_TIPO[solicitud.tipo] ?? solicitud.tipo;
+  const filasPlataformas = solicitud.accesos
+    .map(
+      (a) => `
+        <tr>
+          <td style="padding:6px 12px;color:#111">· ${nombrePlataforma(a.plataformaId, plataformas)}</td>
+        </tr>`,
+    )
+    .join('');
+
+  return {
+    to: solicitud.solicitanteEmail,
+    subject: `[Recibida] Ticket ${solicitud.id} — ${etiqueta}`,
+    body: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#111">
+        <h2 style="margin-bottom:4px">Tu solicitud fue recibida</h2>
+        <p style="color:#888;margin-top:0">Ticket <strong>${solicitud.id}</strong> · Tipo: ${etiqueta}</p>
+        <p>Hemos recibido tu solicitud correctamente. El equipo de accesos la revisará a la brevedad y te avisaremos cuando sea procesada.</p>
+
+        <table style="width:100%;border-collapse:collapse;margin-top:16px;background:#f9f9f9;border-radius:8px;overflow:hidden">
+          <thead>
+            <tr><th style="padding:10px 12px;text-align:left;background:#eee;font-size:0.85rem;color:#555">PLATAFORMAS SOLICITADAS</th></tr>
+          </thead>
+          <tbody>
+            ${filasPlataformas}
+          </tbody>
+        </table>
+
+        <p style="margin-top:24px;font-size:0.8rem;color:#aaa">Este mensaje fue generado automáticamente por Solicitudes de Accesos · Capital Inteligente.</p>
+      </div>
+    `,
+  };
+}
+
 export function construirCorreoEnProceso(solicitud: Solicitud): CorreoSimulado {
   const etiqueta = ETIQUETA_TIPO[solicitud.tipo] ?? solicitud.tipo;
   return {

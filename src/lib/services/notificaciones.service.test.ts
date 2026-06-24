@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Plataforma, Solicitud } from '@/types';
 import {
   construirCorreoSolicitud,
+  construirCorreoConfirmacion,
   construirCorreoEnProceso,
   construirCorreoCompletada,
   BUZON_ACCESOS,
@@ -55,6 +56,29 @@ describe('construirCorreoSolicitud', () => {
     expect(correo.body).toContain('Juan');
     expect(correo.body).toContain('Pérez');
     expect(correo.body).toContain('+56912345678');
+  });
+});
+
+describe('construirCorreoConfirmacion', () => {
+  it('dirige el correo al solicitante', () => {
+    const correo = construirCorreoConfirmacion(solicitud, plataformas);
+    expect(correo.to).toBe('ana@capitalinteligente.cl');
+  });
+
+  it('incluye el id del ticket en el asunto', () => {
+    const correo = construirCorreoConfirmacion(solicitud, plataformas);
+    expect(correo.subject).toContain('sol_1');
+  });
+
+  it('indica que la solicitud fue recibida', () => {
+    const correo = construirCorreoConfirmacion(solicitud, plataformas);
+    expect(correo.body).toContain('recibida');
+  });
+
+  it('incluye las plataformas solicitadas', () => {
+    const correo = construirCorreoConfirmacion(solicitud, plataformas);
+    expect(correo.body).toContain('Gmail @capitalinteligente.cl');
+    expect(correo.body).toContain('Slack');
   });
 });
 

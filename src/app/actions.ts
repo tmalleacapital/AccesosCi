@@ -28,6 +28,7 @@ import {
 } from '@/lib/services/solicitudes.service';
 import {
   construirCorreoSolicitud,
+  construirCorreoConfirmacion,
   construirCorreoEnProceso,
   construirCorreoCompletada,
 } from '@/lib/services/notificaciones.service';
@@ -139,8 +140,12 @@ export async function crearSolicitudAction(_prev: unknown, formData: FormData) {
   await guardarSolicitud(solicitud);
 
   const plataformas = await leerPlataformas();
-  const correo = construirCorreoSolicitud(solicitud, plataformas);
-  await enviarCorreo(correo.to, correo.subject, correo.body);
+  const correoEquipo = construirCorreoSolicitud(solicitud, plataformas);
+  const correoConfirmacion = construirCorreoConfirmacion(solicitud, plataformas);
+  await Promise.all([
+    enviarCorreo(correoEquipo.to, correoEquipo.subject, correoEquipo.body),
+    enviarCorreo(correoConfirmacion.to, correoConfirmacion.subject, correoConfirmacion.body),
+  ]);
 
   revalidatePath('/');
   redirect('/?creada=1');
