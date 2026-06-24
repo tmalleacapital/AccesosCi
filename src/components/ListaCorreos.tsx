@@ -607,11 +607,9 @@ function ModalEliminarBP({
 }) {
   const [advertencia, setAdvertencia] = useState<string | null>(null);
 
-  function handleSeleccionar(bp: { nombre: string; correos: number; extraId?: string }) {
-    if (!bp.extraId) {
-      setAdvertencia(`"${bp.nombre}" es un equipo del sistema y no puede eliminarse desde aquí.`);
-      return;
-    }
+  const bpsDinamicos = bps.filter((bp) => bp.extraId);
+
+  function handleSeleccionar(bp: { nombre: string; correos: number; extraId: string }) {
     if (bp.correos > 0) {
       setAdvertencia(
         `"${bp.nombre}" tiene ${bp.correos} correo${bp.correos !== 1 ? 's' : ''}. Debes eliminar todos los correos antes de poder eliminar el BP.`,
@@ -636,26 +634,34 @@ function ModalEliminarBP({
         </div>
 
         <div className="space-y-1.5">
-          {bps.map((bp) => (
-            <div
-              key={bp.nombre}
-              className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
-            >
-              <div>
-                <p className="text-sm font-medium text-foreground">{bp.nombre}</p>
-                <p className="text-xs text-muted-foreground">
-                  {bp.correos} correo{bp.correos !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleSeleccionar(bp)}
-                className="rounded-md border border-rose-200 bg-background px-2.5 py-1 text-xs text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40"
+          {bpsDinamicos.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              No hay BPs creados manualmente que se puedan eliminar.
+            </p>
+          ) : (
+            bpsDinamicos.map((bp) => (
+              <div
+                key={bp.nombre}
+                className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
               >
-                Eliminar
-              </button>
-            </div>
-          ))}
+                <div>
+                  <p className="text-sm font-medium text-foreground">{bp.nombre}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {bp.correos} correo{bp.correos !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSeleccionar(bp as { nombre: string; correos: number; extraId: string })
+                  }
+                  className="rounded-md border border-rose-200 bg-background px-2.5 py-1 text-xs text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40"
+                >
+                  Eliminar
+                </button>
+              </div>
+            ))
+          )}
         </div>
 
         {advertencia && (
