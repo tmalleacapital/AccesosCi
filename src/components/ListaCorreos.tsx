@@ -782,13 +782,36 @@ export function ListaCorreos({
         <p className="text-xs text-muted-foreground">
           {totalGeneral} correos en {data.hojas.length} hojas · actualizado {data.actualizado}
         </p>
-        <input
-          type="search"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar por nombre o correo…"
-          className="w-56 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-        />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCreandoEquipo(true)}
+            className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground hover:bg-muted"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Nuevo equipo
+          </button>
+          <input
+            type="search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por nombre o correo…"
+            className="w-56 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
       </div>
 
       {/* Tabs por hoja */}
@@ -833,30 +856,6 @@ export function ListaCorreos({
               onEliminar={handleSolicitarEliminar}
             />
           ))
-        )}
-
-        {!busqueda && (
-          <button
-            type="button"
-            onClick={() => setCreandoEquipo(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border py-3 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Nuevo equipo
-          </button>
         )}
       </div>
 
