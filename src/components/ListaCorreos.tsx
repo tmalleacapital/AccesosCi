@@ -38,6 +38,10 @@ function estKey(correo: string, campo: string) {
   return `${correo}||${campo}`;
 }
 
+function metricaKey(grupoNombre: string, label: string) {
+  return `__metrica__:${grupoNombre}||${label}`;
+}
+
 // ─── Celda editable (texto / select) ────────────────────────────────────────
 
 function CeldaTexto({
@@ -277,13 +281,10 @@ function FilaAsesor({
 
 // ─── Tabla de grupo ──────────────────────────────────────────────────────────
 
-const LABELS_DINAMICOS = new Set(['Cuentas Portal Activo', 'Cuentas SalesCloud']);
-
 function calcularMetricasDinamicas(
   grupo: Grupo,
   edits: Record<string, string>,
 ): { label: string; valor: number }[] {
-  // Aplicar edits sobre cada asesor para obtener sf y estado actuales
   const asesores = grupo.asesores.map((a) => ({
     sf: (edits[estKey(a.correo, 'sf')] ?? a.sf ?? '').trim(),
     estado: (edits[estKey(a.correo, 'estado')] ?? a.estado ?? 'Activo').toLowerCase(),
@@ -295,11 +296,74 @@ function calcularMetricasDinamicas(
   return grupo.metricas.map((m) => {
     if (m.label === 'Cuentas Portal Activo') return { ...m, valor: portalActivo };
     if (m.label === 'Cuentas SalesCloud') return { ...m, valor: salesCloud };
-    // "Cuentas Portal Creadas": máximo histórico — sube si Portal Activo lo supera, nunca baja
-    if (m.label === 'Cuentas Portal Creadas')
-      return { ...m, valor: Math.max(m.valor, portalActivo) };
+    if (m.label === 'Cuentas Portal Creadas') {
+      // Baseline editable por el usuario; si no hay override usa el del JSON
+      const rawBaseline = edits[metricaKey(grupo.nombre, 'Cuentas Portal Creadas')];
+      const baseline = rawBaseline !== undefined ? parseInt(rawBaseline, 10) : m.valor;
+      return { ...m, valor: Math.max(baseline, portalActivo) };
+    }
     return m;
   });
+}
+
+// ─── Número editable en badge ─────────────────────────────────────────────────
+
+function BadgeNumeroEditable({
+  label,
+  valor,
+  onSave,
+}: {
+  label: string;
+  valor: number;
+  onSave: (v: number) => void;
+}) {
+  const [editando, setEditando] = useState(false);
+  const [draft, setDraft] = useState(String(valor));
+  const ref = useRef<HTMLInputElement>(null);
+
+  function iniciar() {
+    setDraft(String(valor));
+    setEditando(true);
+    setTimeout(() => ref.current?.select(), 0);
+  }
+
+  function confirmar() {
+    setEditando(false);
+    const num = parseInt(draft, 10);
+    if (!isNaN(num) && num !== valor) onSave(num);
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400">
+      {label}:{' '}
+      {editando ? (
+        <input
+          ref={ref}
+          type="number"
+          value={draft}
+          autoFocus
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={confirmar}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') confirmar();
+            if (e.key === 'Escape') setEditando(false);
+          }}
+          className="w-10 rounded border border-sky-400 bg-sky-50 px-1 text-center text-xs font-bold text-sky-700 outline-none dark:bg-sky-950 dark:text-sky-400"
+        />
+      ) : (
+        <strong
+          role="button"
+          tabIndex={0}
+          title="Clic para editar"
+          onClick={iniciar}
+          onKeyDown={(e) => e.key === 'Enter' && iniciar()}
+          className="cursor-pointer rounded hover:underline hover:decoration-dotted"
+        >
+          {valor}
+        </strong>
+      )}
+    </span>
+  );
 }
 
 function TablaGrupo({
@@ -307,11 +371,13 @@ function TablaGrupo({
   columnas,
   edits,
   onEdit,
+  onEditMetrica,
 }: {
   grupo: Grupo;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
   edits: Record<string, string>;
   onEdit: (correoOrig: string, campo: string, valor: string) => void;
+  onEditMetrica: (label: string, valor: number) => void;
 }) {
   const metricas = useMemo(() => calcularMetricasDinamicas(grupo, edits), [grupo, edits]);
 
@@ -322,14 +388,23 @@ function TablaGrupo({
         <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
           {grupo.asesores.length}
         </span>
-        {metricas.map((m) => (
-          <span
-            key={m.label}
-            className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400"
-          >
-            {m.label}: <strong>{m.valor}</strong>
-          </span>
-        ))}
+        {metricas.map((m) =>
+          m.label === 'Cuentas Portal Creadas' ? (
+            <BadgeNumeroEditable
+              key={m.label}
+              label={m.label}
+              valor={m.valor}
+              onSave={(v) => onEditMetrica(m.label, v)}
+            />
+          ) : (
+            <span
+              key={m.label}
+              className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400"
+            >
+              {m.label}: <strong>{m.valor}</strong>
+            </span>
+          ),
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -422,6 +497,14 @@ export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, st
     });
   }
 
+  function handleEditMetrica(grupoNombre: string, label: string, valor: number) {
+    const key = metricaKey(grupoNombre, label);
+    startTransition(() => {
+      actualizarEdits({ key, valor: String(valor) });
+      editarCorreoAction(key, label, String(valor));
+    });
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -474,6 +557,7 @@ export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, st
               columnas={columnas}
               edits={edits}
               onEdit={handleEdit}
+              onEditMetrica={(label, valor) => handleEditMetrica(g.nombre, label, valor)}
             />
           ))
         )}
