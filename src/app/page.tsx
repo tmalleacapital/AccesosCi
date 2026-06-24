@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { leerPlataformas, leerSolicitudes } from '@/lib/db';
+import { leerEdicionesCorreos, leerPlataformas, leerSolicitudes } from '@/lib/db';
 import { getSesion } from '@/lib/session';
 import { logoutAction } from '@/app/actions';
 import { SolicitudForm } from '@/components/SolicitudForm';
@@ -20,7 +20,11 @@ export default async function Home({
   const { creada } = await searchParams;
   const esEquipo = sesion.rol === 'equipo' || sesion.rol === 'admin';
 
-  const [plataformas, todas] = await Promise.all([leerPlataformas(), leerSolicitudes()]);
+  const [plataformas, todas, edicionesCorreos] = await Promise.all([
+    leerPlataformas(),
+    leerSolicitudes(),
+    sesion.rol === 'admin' ? leerEdicionesCorreos() : Promise.resolve({}),
+  ]);
   const plataformasActivas = plataformas.filter((p) => p.activa);
   const solicitudes = esEquipo ? todas : todas.filter((s) => s.solicitanteEmail === sesion.email);
 
@@ -96,7 +100,7 @@ export default async function Home({
                   {
                     id: 'correos',
                     label: 'Lista de correos',
-                    content: <ListaCorreos />,
+                    content: <ListaCorreos edits={edicionesCorreos} />,
                   },
                 ]
               : []),

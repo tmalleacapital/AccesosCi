@@ -85,3 +85,11 @@ values
     null
   )
 on conflict (id) do nothing;
+
+-- Overrides manuales sobre el directorio de correos importado desde Excel.
+create table if not exists correos_edits (
+  correo text,
+  campo  text,
+  valor  text not null,
+  primary key (correo, campo)
+);

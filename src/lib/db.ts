@@ -78,6 +78,28 @@ export async function guardarSolicitud(solicitud: Solicitud): Promise<void> {
   if (error) throw new Error(`guardarSolicitud: ${error.message}`);
 }
 
+/** Devuelve un mapa { "correo||campo": valor } con todos los overrides del directorio. */
+export async function leerEdicionesCorreos(): Promise<Record<string, string>> {
+  const { data, error } = await supabase.from('correos_edits').select('correo, campo, valor');
+  if (error) throw new Error(`leerEdicionesCorreos: ${error.message}`);
+  const mapa: Record<string, string> = {};
+  for (const row of data ?? []) {
+    mapa[`${row.correo as string}||${row.campo as string}`] = row.valor as string;
+  }
+  return mapa;
+}
+
+export async function guardarEdicionCorreo(
+  correo: string,
+  campo: string,
+  valor: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('correos_edits')
+    .upsert({ correo, campo, valor }, { onConflict: 'correo,campo' });
+  if (error) throw new Error(`guardarEdicionCorreo: ${error.message}`);
+}
+
 export async function actualizarSolicitud(actualizada: Solicitud): Promise<void> {
   const { error } = await supabase
     .from('solicitudes')

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {
   actualizarSolicitud,
+  guardarEdicionCorreo,
   guardarSolicitud,
   leerPlataformas,
   leerSolicitudes,
@@ -133,6 +134,17 @@ export async function crearSolicitudAction(_prev: unknown, formData: FormData) {
 
   revalidatePath('/');
   redirect('/?creada=1');
+}
+
+export async function editarCorreoAction(
+  correo: string,
+  campo: string,
+  valor: string,
+): Promise<void> {
+  const sesion = await getSesion();
+  if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
+  await guardarEdicionCorreo(correo, campo, valor);
+  revalidatePath('/');
 }
 
 export async function cambiarEstadoAction(formData: FormData) {

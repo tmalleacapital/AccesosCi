@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { startTransition, useMemo, useOptimistic, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import correosData from '@/data/correos.json';
+import { editarCorreoAction } from '@/app/actions';
 
 interface Asesor {
   nombre: string;
@@ -33,36 +34,259 @@ function etiquetaHoja(nombre: string): string {
   return nombre.replace(/^MBP\s+/, '');
 }
 
-function Check({ on }: { on: boolean }) {
-  return on ? (
-    <span className="text-emerald-600 dark:text-emerald-400">✓</span>
-  ) : (
-    <span className="text-muted-foreground/40">—</span>
+function estKey(correo: string, campo: string) {
+  return `${correo}||${campo}`;
+}
+
+// ─── Celda editable (texto / select) ────────────────────────────────────────
+
+function CeldaTexto({
+  valor,
+  onSave,
+  className,
+}: {
+  valor: string;
+  onSave: (v: string) => void;
+  className?: string;
+}) {
+  const [editando, setEditando] = useState(false);
+  const [draft, setDraft] = useState(valor);
+  const ref = useRef<HTMLInputElement>(null);
+
+  function iniciar() {
+    setDraft(valor);
+    setEditando(true);
+    setTimeout(() => ref.current?.select(), 0);
+  }
+
+  function confirmar() {
+    setEditando(false);
+    if (draft.trim() !== valor) onSave(draft.trim());
+  }
+
+  if (!editando) {
+    return (
+      <span
+        role="button"
+        tabIndex={0}
+        title="Clic para editar"
+        onClick={iniciar}
+        onKeyDown={(e) => e.key === 'Enter' && iniciar()}
+        className={cn(
+          'cursor-pointer rounded px-0.5 hover:bg-muted/60 hover:underline hover:decoration-dotted',
+          className,
+        )}
+      >
+        {valor || <em className="text-muted-foreground/50">—</em>}
+      </span>
+    );
+  }
+
+  return (
+    <input
+      ref={ref}
+      value={draft}
+      autoFocus
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={confirmar}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') confirmar();
+        if (e.key === 'Escape') setEditando(false);
+      }}
+      className="w-full rounded border border-primary bg-background px-1 py-0.5 text-sm text-foreground outline-none ring-1 ring-primary/50"
+    />
   );
 }
 
-function EstadoBadge({ estado }: { estado: string }) {
-  const activo = estado.toLowerCase() === 'activo';
+function CeldaSelect({
+  valor,
+  opciones,
+  onSave,
+}: {
+  valor: string;
+  opciones: string[];
+  onSave: (v: string) => void;
+}) {
   return (
-    <span
-      className={cn(
-        'inline-block rounded-full px-2 py-0.5 text-xs font-medium',
-        activo
-          ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400'
-          : 'border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-400',
-      )}
+    <select
+      value={valor}
+      onChange={(e) => onSave(e.target.value)}
+      className="rounded border border-border bg-background px-1 py-0.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
     >
-      {estado || '—'}
-    </span>
+      {opciones.map((o) => (
+        <option key={o} value={o}>
+          {o || '—'}
+        </option>
+      ))}
+    </select>
   );
 }
+
+// ─── Badge estado ────────────────────────────────────────────────────────────
+
+function EstadoBadge({ estado, onSave }: { estado: string; onSave: (v: string) => void }) {
+  const activo = estado.toLowerCase() === 'activo';
+  return (
+    <select
+      value={estado}
+      onChange={(e) => onSave(e.target.value)}
+      className={cn(
+        'cursor-pointer rounded-full border px-2 py-0.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary/50',
+        activo
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400'
+          : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-400',
+      )}
+    >
+      <option value="Activo">Activo</option>
+      <option value="Eliminado">Eliminado</option>
+    </select>
+  );
+}
+
+// ─── Toggle booleano ─────────────────────────────────────────────────────────
+
+function ToggleBool({ valor, onToggle }: { valor: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      title={valor ? 'Sí — clic para quitar' : 'No — clic para agregar'}
+      className="text-base leading-none focus:outline-none"
+    >
+      {valor ? (
+        <span className="text-emerald-600 dark:text-emerald-400">✓</span>
+      ) : (
+        <span className="text-muted-foreground/40 hover:text-muted-foreground">—</span>
+      )}
+    </button>
+  );
+}
+
+// ─── Fila de asesor ──────────────────────────────────────────────────────────
+
+function FilaAsesor({
+  asesor,
+  columnas,
+  edits,
+  onEdit,
+}: {
+  asesor: Asesor;
+  columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
+  edits: Record<string, string>;
+  onEdit: (campo: string, valor: string) => void;
+}) {
+  const orig = asesor.correo;
+
+  function val(campo: keyof Asesor): string {
+    const override = edits[estKey(orig, campo)];
+    if (override !== undefined) return override;
+    const v = asesor[campo];
+    return typeof v === 'boolean' ? (v ? 'true' : 'false') : (v ?? '');
+  }
+
+  const nombre = val('nombre');
+  const correo = val('correo');
+  const estado = val('estado');
+  const jira = val('jira') === 'true';
+  const slack = val('slack') === 'true';
+  const sf = val('sf');
+  const tl = val('tl') === 'true';
+  const fecha = val('fechaEliminacion');
+
+  return (
+    <tr className="border-b border-border last:border-0 hover:bg-muted/20">
+      {/* Nombre */}
+      <td className="min-w-[160px] px-3 py-2 text-foreground">
+        <div className="flex items-center gap-1.5">
+          <CeldaTexto valor={nombre} onSave={(v) => onEdit('nombre', v)} />
+          {tl && (
+            <button
+              type="button"
+              title="T.L — clic para quitar"
+              onClick={() => onEdit('tl', 'false')}
+              className="rounded bg-amber-100 px-1 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400"
+            >
+              T.L
+            </button>
+          )}
+          {!tl && (
+            <button
+              type="button"
+              title="Marcar como Team Leader"
+              onClick={() => onEdit('tl', 'true')}
+              className="hidden rounded px-1 py-0.5 text-[10px] text-muted-foreground/30 hover:bg-muted hover:text-muted-foreground group-hover:inline"
+            >
+              T.L
+            </button>
+          )}
+        </div>
+      </td>
+
+      {/* Correo */}
+      <td className="min-w-[220px] px-3 py-2">
+        <CeldaTexto
+          valor={correo}
+          onSave={(v) => onEdit('correo', v)}
+          className="font-mono text-xs text-muted-foreground"
+        />
+      </td>
+
+      {/* Estado */}
+      <td className="w-[110px] px-3 py-2">
+        <EstadoBadge estado={estado || 'Activo'} onSave={(v) => onEdit('estado', v)} />
+      </td>
+
+      {/* Jira */}
+      {columnas.jira && (
+        <td className="w-12 px-3 py-2 text-center">
+          <ToggleBool valor={jira} onToggle={() => onEdit('jira', jira ? 'false' : 'true')} />
+        </td>
+      )}
+
+      {/* Slack */}
+      {columnas.slack && (
+        <td className="w-12 px-3 py-2 text-center">
+          <ToggleBool valor={slack} onToggle={() => onEdit('slack', slack ? 'false' : 'true')} />
+        </td>
+      )}
+
+      {/* Salesforce */}
+      {columnas.sf && (
+        <td className="w-[100px] px-3 py-2">
+          <CeldaSelect
+            valor={sf}
+            opciones={['', 'Portal', 'Cloud']}
+            onSave={(v) => onEdit('sf', v)}
+          />
+        </td>
+      )}
+
+      {/* Fecha baja */}
+      {columnas.fecha && (
+        <td className="w-[110px] whitespace-nowrap px-3 py-2">
+          <CeldaTexto
+            valor={fecha}
+            onSave={(v) => onEdit('fechaEliminacion', v)}
+            className="text-xs text-muted-foreground"
+          />
+        </td>
+      )}
+    </tr>
+  );
+}
+
+// ─── Tabla de grupo ──────────────────────────────────────────────────────────
 
 function TablaGrupo({
   grupo,
   columnas,
+  edits,
+  onEdit,
 }: {
   grupo: Grupo;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
+  edits: Record<string, string>;
+  onEdit: (correoOrig: string, campo: string, valor: string) => void;
 }) {
   return (
     <div className="space-y-2">
@@ -85,54 +309,34 @@ function TablaGrupo({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-left">
-              <th className="px-3 py-2 font-semibold text-foreground">Nombre</th>
-              <th className="px-3 py-2 font-semibold text-foreground">Correo</th>
-              <th className="px-3 py-2 font-semibold text-foreground">Estado</th>
+              <th className="min-w-[160px] px-3 py-2 font-semibold text-foreground">Nombre</th>
+              <th className="min-w-[220px] px-3 py-2 font-semibold text-foreground">Correo</th>
+              <th className="w-[110px] px-3 py-2 font-semibold text-foreground">Estado</th>
               {columnas.jira && (
-                <th className="px-3 py-2 text-center font-semibold text-foreground">Jira</th>
+                <th className="w-12 px-3 py-2 text-center font-semibold text-foreground">Jira</th>
               )}
               {columnas.slack && (
-                <th className="px-3 py-2 text-center font-semibold text-foreground">Slack</th>
+                <th className="w-12 px-3 py-2 text-center font-semibold text-foreground">Slack</th>
               )}
               {columnas.sf && (
-                <th className="px-3 py-2 font-semibold text-foreground">Salesforce</th>
+                <th className="w-[100px] px-3 py-2 font-semibold text-foreground">Salesforce</th>
               )}
-              {columnas.fecha && <th className="px-3 py-2 font-semibold text-foreground">Baja</th>}
+              {columnas.fecha && (
+                <th className="w-[110px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
+                  Fecha baja
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {grupo.asesores.map((a, i) => (
-              <tr
+              <FilaAsesor
                 key={`${a.correo}-${i}`}
-                className="border-b border-border last:border-0 hover:bg-muted/30"
-              >
-                <td className="px-3 py-2 text-foreground">
-                  {a.nombre}
-                  {a.tl && (
-                    <span className="ml-1.5 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
-                      T.L
-                    </span>
-                  )}
-                </td>
-                <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{a.correo}</td>
-                <td className="px-3 py-2">
-                  <EstadoBadge estado={a.estado} />
-                </td>
-                {columnas.jira && (
-                  <td className="px-3 py-2 text-center">
-                    <Check on={a.jira} />
-                  </td>
-                )}
-                {columnas.slack && (
-                  <td className="px-3 py-2 text-center">
-                    <Check on={a.slack} />
-                  </td>
-                )}
-                {columnas.sf && <td className="px-3 py-2 text-muted-foreground">{a.sf || '—'}</td>}
-                {columnas.fecha && (
-                  <td className="px-3 py-2 text-muted-foreground">{a.fechaEliminacion ?? '—'}</td>
-                )}
-              </tr>
+                asesor={a}
+                columnas={columnas}
+                edits={edits}
+                onEdit={(campo, valor) => onEdit(a.correo, campo, valor)}
+              />
             ))}
           </tbody>
         </table>
@@ -141,9 +345,16 @@ function TablaGrupo({
   );
 }
 
-export function ListaCorreos() {
+// ─── Componente principal ────────────────────────────────────────────────────
+
+export function ListaCorreos({ edits: editsInicial }: { edits: Record<string, string> }) {
   const [hojaActiva, setHojaActiva] = useState(data.hojas[0]?.id);
   const [busqueda, setBusqueda] = useState('');
+
+  const [edits, actualizarEdits] = useOptimistic(
+    editsInicial,
+    (prev, update: { key: string; valor: string }) => ({ ...prev, [update.key]: update.valor }),
+  );
 
   const hoja = data.hojas.find((h) => h.id === hojaActiva) ?? data.hojas[0];
 
@@ -160,7 +371,6 @@ export function ListaCorreos() {
       .filter((g) => g.asesores.length > 0);
   }, [hoja, busqueda]);
 
-  // Qué columnas tienen datos en esta hoja (oculta las vacías, p.ej. en Planta).
   const columnas = useMemo(() => {
     const all = hoja.grupos.flatMap((g) => g.asesores);
     return {
@@ -176,6 +386,14 @@ export function ListaCorreos() {
     (n, h) => n + h.grupos.reduce((m, g) => m + g.asesores.length, 0),
     0,
   );
+
+  function handleEdit(correoOrig: string, campo: string, valor: string) {
+    const key = estKey(correoOrig, campo);
+    startTransition(() => {
+      actualizarEdits({ key, valor });
+      editarCorreoAction(correoOrig, campo, valor);
+    });
+  }
 
   return (
     <div className="space-y-5">
@@ -216,14 +434,21 @@ export function ListaCorreos() {
         {hoja.grupos.length !== 1 ? 's' : ''}
       </p>
 
-      {/* Subtablas por grupo */}
       <div className="space-y-6">
         {grupos.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
             Sin resultados para «{busqueda}».
           </p>
         ) : (
-          grupos.map((g) => <TablaGrupo key={g.nombre} grupo={g} columnas={columnas} />)
+          grupos.map((g) => (
+            <TablaGrupo
+              key={g.nombre}
+              grupo={g}
+              columnas={columnas}
+              edits={edits}
+              onEdit={handleEdit}
+            />
+          ))
         )}
       </div>
     </div>
