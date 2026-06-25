@@ -139,7 +139,6 @@ export function SolicitudesList({
       tabs={grupos.map((grupo) => ({
         id: grupo.tipo,
         label: GRUPO_TITULO[grupo.tipo],
-        badge: grupo.solicitudes.length,
         content:
           grupo.solicitudes.length === 0 ? (
             <p className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">

@@ -127,7 +127,6 @@ export default async function Home({
                   {
                     id: 'eliminados',
                     label: 'Eliminados',
-                    badge: countEliminados || undefined,
                     content: (
                       <EliminadosPanel
                         edits={edicionesCorreos}
