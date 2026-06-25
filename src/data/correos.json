@@ -273,6 +273,15 @@
               "tl": false
             },
             {
+              "nombre": "Tomás Mallea (test BP)",
+              "correo": "areati@capitalinteligente.cl",
+              "estado": "Activo",
+              "jira": false,
+              "slack": false,
+              "sf": "",
+              "tl": false
+            },
+            {
               "nombre": "Aurora de las Mercedes Klausen Hernández",
               "correo": "aklausen@capitalinteligente.cl",
               "estado": "Activo",
