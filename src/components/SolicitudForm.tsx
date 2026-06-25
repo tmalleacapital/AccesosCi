@@ -9,9 +9,41 @@ const estadoInicial: { error?: string } = {};
 const inputClass =
   'mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary';
 
+function validarRut(rut: string): boolean {
+  const clean = rut.replace(/\./g, '').replace(/-/g, '').toUpperCase();
+  if (clean.length < 2) return false;
+  const body = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  if (!/^\d+$/.test(body)) return false;
+  let sum = 0;
+  let mul = 2;
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum += parseInt(body[i]) * mul;
+    mul = mul === 7 ? 2 : mul + 1;
+  }
+  const expected = 11 - (sum % 11);
+  const dvEsperado = expected === 11 ? '0' : expected === 10 ? 'K' : String(expected);
+  return dv === dvEsperado;
+}
+
+function formatearRut(value: string): string {
+  const clean = value
+    .replace(/\./g, '')
+    .replace(/-/g, '')
+    .replace(/[^0-9kK]/g, '')
+    .toUpperCase();
+  if (clean.length <= 1) return clean;
+  const body = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  const formatted = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${formatted}-${dv}`;
+}
+
 export function SolicitudForm({ plataformas }: { plataformas: Plataforma[] }) {
   const [estado, formAction, pending] = useActionState(crearSolicitudAction, estadoInicial);
   const [tipo, setTipo] = useState<TipoSolicitud>('crear');
+  const [rut, setRut] = useState('');
+  const [rutError, setRutError] = useState('');
 
   return (
     <form action={formAction} className="space-y-5 rounded-xl border border-border bg-card p-6">
@@ -44,6 +76,30 @@ export function SolicitudForm({ plataformas }: { plataformas: Plataforma[] }) {
             name="correoPersonal"
             type="email"
           />
+          <div className="sm:col-span-2">
+            <label htmlFor="rut" className="block text-sm font-medium text-foreground">
+              RUT
+            </label>
+            <input
+              id="rut"
+              name="rut"
+              type="text"
+              required
+              placeholder="12.345.678-9"
+              value={rut}
+              onChange={(e) => {
+                const formatted = formatearRut(e.target.value);
+                setRut(formatted);
+                if (rutError) setRutError('');
+              }}
+              onBlur={() => {
+                if (rut && !validarRut(rut)) setRutError('RUT inválido, ingresa un RUT real.');
+                else setRutError('');
+              }}
+              className={`${inputClass} ${rutError ? 'border-rose-400' : ''}`}
+            />
+            {rutError && <p className="mt-1 text-xs text-rose-500">{rutError}</p>}
+          </div>
         </div>
       )}
 

@@ -24,6 +24,7 @@ const solicitud: Solicitud = {
     segundoNombre: 'Carlos',
     apellidoPaterno: 'Pérez',
     apellidoMaterno: 'López',
+    rut: '12.345.678-9',
     celular: '+56912345678',
     correoPersonal: 'juan@gmail.com',
   },

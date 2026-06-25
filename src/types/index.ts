@@ -42,6 +42,7 @@ export interface DatosCreacion {
   segundoNombre: string;
   apellidoPaterno: string;
   apellidoMaterno: string;
+  rut: string;
   celular: string;
   /** Correo personal donde se envían las credenciales del nuevo @capitalinteligente.cl. */
   correoPersonal: string;

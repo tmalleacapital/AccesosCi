@@ -104,6 +104,7 @@ export async function crearSolicitudAction(_prev: unknown, formData: FormData) {
       segundoNombre: String(formData.get('segundoNombre') ?? ''),
       apellidoPaterno: String(formData.get('apellidoPaterno') ?? ''),
       apellidoMaterno: String(formData.get('apellidoMaterno') ?? ''),
+      rut: String(formData.get('rut') ?? ''),
       celular: String(formData.get('celular') ?? ''),
       correoPersonal: String(formData.get('correoPersonal') ?? ''),
     };

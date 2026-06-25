@@ -79,6 +79,10 @@ function DatosSolicitudResumen({ solicitud }: { solicitud: Solicitud }) {
           <dd className="font-medium text-foreground">{nombreCompleto}</dd>
         </div>
         <div className="flex gap-2">
+          <dt className="text-muted-foreground shrink-0">RUT</dt>
+          <dd className="text-foreground">{d.rut}</dd>
+        </div>
+        <div className="flex gap-2">
           <dt className="text-muted-foreground shrink-0">Celular</dt>
           <dd className="text-foreground">{d.celular}</dd>
         </div>
