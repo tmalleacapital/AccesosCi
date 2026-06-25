@@ -960,7 +960,16 @@ export function ListaCorreos({
     () =>
       gruposExtra
         .filter((g) => g.hojaId === hoja.id)
-        .map((g) => ({ nombre: g.nombre, asesores: [], metricas: [], extraId: g.id })),
+        .map((g) => ({
+          nombre: g.nombre,
+          asesores: [],
+          metricas: [
+            { label: 'Cuentas Portal Activo', valor: 0 },
+            { label: 'Cuentas Portal Creadas', valor: 0 },
+            { label: 'Cuentas SalesCloud', valor: 0 },
+          ],
+          extraId: g.id,
+        })),
     [gruposExtra, hoja.id],
   );
 
