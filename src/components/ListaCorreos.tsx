@@ -465,7 +465,12 @@ function calcularMetricasDinamicas(
   eliminadas: Set<string>,
 ): { label: string; valor: number }[] {
   const asesores = grupo.asesores
-    .filter((a) => !eliminadas.has(a.correo) && edits[estKey(a.correo, 'eliminado')] !== 'true')
+    .filter(
+      (a) =>
+        !eliminadas.has(a.correo) &&
+        edits[estKey(a.correo, 'eliminado')] !== 'true' &&
+        (a.esDinamico || edits[estKey(a.correo, 'transferido')] !== 'true'),
+    )
     .map((a) => ({
       sf: (edits[estKey(a.correo, 'sf')] ?? a.sf ?? '').trim(),
       estado: (edits[estKey(a.correo, 'estado')] ?? a.estado ?? 'Activo').toLowerCase(),
