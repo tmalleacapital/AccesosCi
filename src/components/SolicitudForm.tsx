@@ -71,11 +71,7 @@ export function SolicitudForm({ plataformas }: { plataformas: Plataforma[] }) {
           <Campo label="Apellido Paterno" name="apellidoPaterno" />
           <Campo label="Apellido Materno" name="apellidoMaterno" />
           <Campo label="Celular" name="celular" placeholder="+56 9 1234 5678" />
-          <Campo
-            label="Correo Personal (envío de credenciales)"
-            name="correoPersonal"
-            type="email"
-          />
+          <CampoEmail label="Correo Personal (envío de credenciales)" name="correoPersonal" />
           <div className="sm:col-span-2">
             <label htmlFor="rut" className="block text-sm font-medium text-foreground">
               RUT
@@ -105,11 +101,7 @@ export function SolicitudForm({ plataformas }: { plataformas: Plataforma[] }) {
 
       {tipo === 'modificar' && (
         <div className="space-y-4">
-          <Campo
-            label="Correo @capitalinteligente.cl a modificar"
-            name="correoCorporativo"
-            type="email"
-          />
+          <CampoEmail label="Correo @capitalinteligente.cl a modificar" name="correoCorporativo" />
           <div>
             <label htmlFor="detalle" className="block text-sm font-medium text-foreground">
               Detalle del cambio
@@ -121,10 +113,9 @@ export function SolicitudForm({ plataformas }: { plataformas: Plataforma[] }) {
 
       {tipo === 'baja' && (
         <div className="space-y-4">
-          <Campo
+          <CampoEmail
             label="Correo @capitalinteligente.cl a dar de baja"
             name="correoCorporativo"
-            type="email"
           />
           <Campo
             label="Si tiene Salesforce: ¿a quién se redistribuyen leads y cuentas?"
@@ -205,6 +196,45 @@ function Campo({
         required={required}
         className={inputClass}
       />
+    </div>
+  );
+}
+
+function CampoEmail({
+  label,
+  name,
+  required = true,
+}: {
+  label: string;
+  name: string;
+  required?: boolean;
+}) {
+  const [error, setError] = useState('');
+
+  function validar(value: string) {
+    if (!value) return required ? 'Este campo es requerido.' : '';
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+      ? ''
+      : 'Ingresa un correo válido (ej: nombre@dominio.com).';
+  }
+
+  return (
+    <div>
+      <label htmlFor={name} className="block text-sm font-medium text-foreground">
+        {label}
+      </label>
+      <input
+        id={name}
+        name={name}
+        type="email"
+        required={required}
+        onChange={() => {
+          if (error) setError('');
+        }}
+        onBlur={(e) => setError(validar(e.target.value))}
+        className={`${inputClass} ${error ? 'border-rose-400' : ''}`}
+      />
+      {error && <p className="mt-1 text-xs text-rose-500">{error}</p>}
     </div>
   );
 }
