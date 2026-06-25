@@ -4,7 +4,7 @@
     "tipo": "crear",
     "solicitanteEmail": "tmallea@capitalinteligente.cl",
     "fechaCreacion": "2026-06-23T21:59:14.239Z",
-    "estado": "pendiente",
+    "estado": "completada",
     "datos": {
       "nombre": "Tomás",
       "segundoNombre": "Sebastian",
@@ -17,27 +17,28 @@
       {
         "plataformaId": "gmail",
         "fechaSolicitud": "2026-06-23T21:59:14.239Z",
-        "estado": "pendiente"
+        "estado": "completada"
       },
       {
         "plataformaId": "slack",
         "fechaSolicitud": "2026-06-23T21:59:14.239Z",
-        "estado": "pendiente"
+        "estado": "completada"
       },
       {
         "plataformaId": "salesforce",
         "fechaSolicitud": "2026-06-23T21:59:14.239Z",
-        "estado": "pendiente"
+        "estado": "completada"
       }
     ],
-    "comentario": "Bajo el alero de martin guzman"
+    "comentario": "Bajo el alero de martin guzman",
+    "correoCorporativoAsignado": "tmallea@capitalinteligente.cl"
   },
   {
     "id": "sol_abc9e2e3",
     "tipo": "crear",
     "solicitanteEmail": "tmallea@capitalinteligente.cl",
     "fechaCreacion": "2026-06-23T21:40:38.081Z",
-    "estado": "rechazada",
+    "estado": "completada",
     "datos": {
       "nombre": "Tomas",
       "segundoNombre": "SEBA",
@@ -50,24 +51,25 @@
       {
         "plataformaId": "gmail",
         "fechaSolicitud": "2026-06-23T21:40:38.081Z",
-        "estado": "rechazada"
+        "estado": "completada"
       },
       {
         "plataformaId": "slack",
         "fechaSolicitud": "2026-06-23T21:40:38.081Z",
-        "estado": "rechazada"
+        "estado": "completada"
       },
       {
         "plataformaId": "salesforce",
         "fechaSolicitud": "2026-06-23T21:40:38.081Z",
-        "estado": "rechazada"
+        "estado": "completada"
       },
       {
         "plataformaId": "jira",
         "fechaSolicitud": "2026-06-23T21:40:38.081Z",
-        "estado": "rechazada"
+        "estado": "completada"
       }
-    ]
+    ],
+    "correoCorporativoAsignado": "tmallea@capitalinteligente.cl"
   },
   {
     "id": "sol_7190fbff",
