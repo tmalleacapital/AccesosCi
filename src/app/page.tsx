@@ -17,6 +17,7 @@ import { SolicitudesList } from '@/components/SolicitudesList';
 import { DashboardTabs } from '@/components/DashboardTabs';
 import { ListaCorreos } from '@/components/ListaCorreos';
 import { EliminadosPanel } from '@/components/EliminadosPanel';
+import { AutoRefresh } from '@/components/AutoRefresh';
 
 export default async function Home({
   searchParams,
@@ -55,6 +56,7 @@ export default async function Home({
 
   return (
     <div className="flex flex-1 flex-col bg-background">
+      <AutoRefresh />
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <div>
