@@ -11,6 +11,7 @@ import {
   eliminarCorreoAction,
   eliminarGrupoAction,
   ocultarGrupoAction,
+  transferirCorreoAction,
 } from '@/app/actions';
 import type { GrupoExtra, HojaExtra, MiembroExtra } from '@/lib/db';
 
@@ -23,6 +24,7 @@ interface Asesor {
   sf: string;
   tl: boolean;
   fechaEliminacion?: string;
+  esDinamico?: boolean;
 }
 
 interface Grupo {
@@ -269,18 +271,30 @@ function UndoToast({ nombre, onDeshacer }: { nombre: string; onDeshacer: () => v
 
 // ─── Fila de asesor ──────────────────────────────────────────────────────────
 
+interface TransferirDatos {
+  correo: string;
+  nombre: string;
+  slack: boolean;
+  jira: boolean;
+  sf: string;
+  estado: string;
+  esDinamico: boolean;
+}
+
 function FilaAsesor({
   asesor,
   columnas,
   edits,
   onEdit,
   onEliminar,
+  onTransferir,
 }: {
   asesor: Asesor;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
   edits: Record<string, string>;
   onEdit: (campo: string, valor: string) => void;
   onEliminar: () => void;
+  onTransferir: (datos: TransferirDatos) => void;
 }) {
   const orig = asesor.correo;
 
@@ -381,30 +395,63 @@ function FilaAsesor({
 
       {/* Acciones */}
       <td className="px-1 py-2 text-center">
-        <button
-          type="button"
-          title="Eliminar asesor"
-          onClick={onEliminar}
-          className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-rose-50 hover:text-rose-600 group-hover:opacity-100 dark:hover:bg-rose-950/40"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="flex items-center justify-center gap-0.5">
+          <button
+            type="button"
+            title="Transferir a otro BP"
+            onClick={() =>
+              onTransferir({
+                correo: orig,
+                nombre,
+                slack,
+                jira,
+                sf,
+                estado,
+                esDinamico: !!asesor.esDinamico,
+              })
+            }
+            className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-sky-50 hover:text-sky-600 group-hover:opacity-100 dark:hover:bg-sky-950/40"
           >
-            <polyline points="3 6 5 6 21 6" />
-            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-            <path d="M10 11v6" />
-            <path d="M14 11v6" />
-            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            title="Eliminar asesor"
+            onClick={onEliminar}
+            className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-rose-50 hover:text-rose-600 group-hover:opacity-100 dark:hover:bg-rose-950/40"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+            </svg>
+          </button>
+        </div>
       </td>
     </tr>
   );
@@ -508,6 +555,7 @@ function TablaGrupo({
   onEdit,
   onEditMetrica,
   onEliminar,
+  onTransferir,
 }: {
   grupo: Grupo;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
@@ -516,6 +564,7 @@ function TablaGrupo({
   onEdit: (correoOrig: string, campo: string, valor: string) => void;
   onEditMetrica: (label: string, valor: number) => void;
   onEliminar: (correo: string, nombre: string) => void;
+  onTransferir: (datos: TransferirDatos) => void;
 }) {
   const metricas = useMemo(
     () => calcularMetricasDinamicas(grupo, edits, eliminadas),
@@ -587,6 +636,7 @@ function TablaGrupo({
                 onEliminar={() =>
                   onEliminar(a.correo, edits[estKey(a.correo, 'nombre')] ?? a.nombre)
                 }
+                onTransferir={onTransferir}
               />
             ))}
           </tbody>
@@ -747,6 +797,111 @@ function ModalNuevoEquipo({
   );
 }
 
+// ─── Modal transferir BP ─────────────────────────────────────────────────────
+
+interface BPDisponible {
+  hojaId: string;
+  hojaLabel: string;
+  grupoNombre: string;
+}
+
+function ModalTransferirBP({
+  nombre,
+  todosBPs,
+  onTransferir,
+  onCancelar,
+}: {
+  nombre: string;
+  todosBPs: BPDisponible[];
+  onTransferir: (hojaId: string, grupoNombre: string) => void;
+  onCancelar: () => void;
+}) {
+  const [seleccionado, setSeleccionado] = useState<{ hojaId: string; grupoNombre: string } | null>(
+    null,
+  );
+
+  const hojas = useMemo(() => {
+    const map = new Map<string, { hojaId: string; hojaLabel: string; grupos: string[] }>();
+    for (const bp of todosBPs) {
+      if (!map.has(bp.hojaId)) {
+        map.set(bp.hojaId, { hojaId: bp.hojaId, hojaLabel: bp.hojaLabel, grupos: [] });
+      }
+      map.get(bp.hojaId)!.grupos.push(bp.grupoNombre);
+    }
+    return Array.from(map.values());
+  }, [todosBPs]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={onCancelar}
+    >
+      <div
+        className="flex max-h-[80vh] w-96 flex-col space-y-4 rounded-xl border border-border bg-card p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold text-foreground">Transferir correo</h2>
+          <p className="text-sm text-muted-foreground">
+            Selecciona el BP destino para <strong className="text-foreground">{nombre}</strong>.
+          </p>
+        </div>
+
+        <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+          {hojas.map((hoja) => (
+            <div key={hoja.hojaId}>
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {hoja.hojaLabel}
+              </p>
+              <div className="space-y-1">
+                {hoja.grupos.map((g) => {
+                  const activo =
+                    seleccionado?.hojaId === hoja.hojaId && seleccionado?.grupoNombre === g;
+                  return (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setSeleccionado({ hojaId: hoja.hojaId, grupoNombre: g })}
+                      className={cn(
+                        'w-full rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                        activo
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border text-foreground hover:bg-muted',
+                      )}
+                    >
+                      {g}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={onCancelar}
+            className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={!seleccionado}
+            onClick={() =>
+              seleccionado && onTransferir(seleccionado.hojaId, seleccionado.grupoNombre)
+            }
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
+          >
+            Transferir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Componente principal ────────────────────────────────────────────────────
 
 export function ListaCorreos({
@@ -772,6 +927,7 @@ export function ListaCorreos({
 
   const [hojaActiva, setHojaActiva] = useState(data.hojas[0]?.id);
   const [creandoMBP, setCreandoMBP] = useState(false);
+  const [transfiriendo, setTransfiriendo] = useState<TransferirDatos | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [confirming, setConfirming] = useState<{ correo: string; nombre: string } | null>(null);
   const [undoItem, setUndoItem] = useState<{ correo: string; nombre: string } | null>(null);
@@ -818,6 +974,7 @@ export function ListaCorreos({
           sf: m.sf,
           tl: false,
           fechaEliminacion: undefined as string | undefined,
+          esDinamico: true,
         }));
       return extras.length > 0 ? { ...g, asesores: [...g.asesores, ...extras] } : g;
     });
@@ -862,6 +1019,22 @@ export function ListaCorreos({
     0,
   );
 
+  const todosBPs = useMemo<BPDisponible[]>(() => {
+    const result: BPDisponible[] = [];
+    for (const h of data.hojas) {
+      for (const g of h.grupos) {
+        if (!gruposOcultos.some((o) => o.hojaId === h.id && o.nombre === g.nombre)) {
+          result.push({ hojaId: h.id, hojaLabel: etiquetaHoja(h.nombre), grupoNombre: g.nombre });
+        }
+      }
+    }
+    for (const g of gruposExtra) {
+      const hojaLabel = etiquetaHoja(todasHojas.find((h) => h.id === g.hojaId)?.nombre ?? g.hojaId);
+      result.push({ hojaId: g.hojaId, hojaLabel, grupoNombre: g.nombre });
+    }
+    return result;
+  }, [gruposOcultos, gruposExtra, todasHojas]);
+
   function handleEdit(correoOrig: string, campo: string, valor: string) {
     const key = estKey(correoOrig, campo);
     startTransition(() => {
@@ -905,6 +1078,27 @@ export function ListaCorreos({
       });
     }
     setUndoItem(null);
+  }
+
+  function handleTransferir(hojaId: string, grupoNombre: string) {
+    if (!transfiriendo) return;
+    const datos = transfiriendo;
+    setTransfiriendo(null);
+    startTransition(() => {
+      transferirCorreoAction(
+        datos.correo,
+        {
+          nombre: datos.nombre,
+          slack: datos.slack,
+          jira: datos.jira,
+          sf: datos.sf,
+          estado: datos.estado,
+        },
+        hojaId,
+        grupoNombre,
+        datos.esDinamico,
+      );
+    });
   }
 
   function handleCrearEquipo(nombre: string) {
@@ -1053,10 +1247,22 @@ export function ListaCorreos({
               onEdit={handleEdit}
               onEditMetrica={(label, valor) => handleEditMetrica(g.nombre, label, valor)}
               onEliminar={handleSolicitarEliminar}
+              onTransferir={setTransfiriendo}
             />
           ))
         )}
       </div>
+
+      {transfiriendo &&
+        createPortal(
+          <ModalTransferirBP
+            nombre={transfiriendo.nombre}
+            todosBPs={todosBPs}
+            onTransferir={handleTransferir}
+            onCancelar={() => setTransfiriendo(null)}
+          />,
+          document.body,
+        )}
 
       {creandoMBP &&
         createPortal(

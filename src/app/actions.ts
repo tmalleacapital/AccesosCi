@@ -15,6 +15,7 @@ import {
   leerPlataformas,
   leerSolicitudes,
   leerUsuarios,
+  transferirMiembroExtra,
 } from '@/lib/db';
 import { clearSesion, getSesion, setSesion } from '@/lib/session';
 import { esCorreoCorporativo } from '@/lib/services/auth.service';
@@ -270,6 +271,38 @@ export async function cambiarEstadoAction(formData: FormData) {
         '',
       );
     }
+  }
+
+  revalidatePath('/');
+}
+
+export async function transferirCorreoAction(
+  correo: string,
+  datos: { nombre: string; slack: boolean; jira: boolean; sf: string; estado: string },
+  targetHojaId: string,
+  targetGrupoNombre: string,
+  esDinamico: boolean,
+): Promise<void> {
+  const sesion = await getSesion();
+  if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
+
+  if (esDinamico) {
+    await transferirMiembroExtra(correo, targetHojaId, targetGrupoNombre);
+  } else {
+    await Promise.all([
+      guardarEdicionCorreo(correo, 'eliminado', 'true'),
+      guardarEdicionCorreo(correo, 'eliminado_por', sesion.email),
+      guardarEdicionCorreo(correo, 'eliminado_en', new Date().toISOString()),
+    ]);
+    await crearMiembroExtra(
+      targetHojaId,
+      targetGrupoNombre,
+      datos.nombre,
+      correo,
+      datos.slack,
+      datos.jira,
+      datos.sf,
+    );
   }
 
   revalidatePath('/');

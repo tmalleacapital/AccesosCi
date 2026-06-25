@@ -211,6 +211,18 @@ export async function crearMiembroExtra(
   if (error) throw new Error(`crearMiembroExtra: ${error.message}`);
 }
 
+export async function transferirMiembroExtra(
+  correo: string,
+  newHojaId: string,
+  newGrupoNombre: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('miembros_extra')
+    .update({ hoja_id: newHojaId, grupo_nombre: newGrupoNombre })
+    .eq('correo', correo);
+  if (error) throw new Error(`transferirMiembroExtra: ${error.message}`);
+}
+
 export async function borrarEdicionesEliminado(correo: string): Promise<void> {
   const { error } = await supabase
     .from('correos_edits')
