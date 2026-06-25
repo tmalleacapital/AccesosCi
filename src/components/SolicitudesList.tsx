@@ -13,11 +13,16 @@ import { DashboardTabs } from '@/components/DashboardTabs';
 import { CompletarCreacionForm } from '@/components/CompletarCreacionForm';
 import type { GrupoExtra } from '@/lib/db';
 
+const RESPONSABLE_CORREO = 'tmallea@capitalinteligente.cl';
+const RESPONSABLE_SALESFORCE = 'mguzman@capitalinteligente.cl';
+
 const ESTADO_ESTILO: Record<EstadoSolicitud, string> = {
   pendiente:
     'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400',
   en_proceso:
     'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400',
+  esperando_salesforce:
+    'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-400',
   completada:
     'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400',
   rechazada:
@@ -27,6 +32,7 @@ const ESTADO_ESTILO: Record<EstadoSolicitud, string> = {
 const ESTADO_LABEL: Record<EstadoSolicitud, string> = {
   pendiente: 'Pendiente',
   en_proceso: 'En proceso',
+  esperando_salesforce: 'Esperando Salesforce',
   completada: 'Completada',
   rechazada: 'Rechazada',
 };
@@ -117,11 +123,13 @@ export function SolicitudesList({
   plataformas,
   esEquipo,
   gruposExtra = [],
+  usuarioEmail = '',
 }: {
   solicitudes: Solicitud[];
   plataformas: Plataforma[];
   esEquipo: boolean;
   gruposExtra?: GrupoExtra[];
+  usuarioEmail?: string;
 }) {
   if (solicitudes.length === 0) {
     return (
@@ -153,6 +161,7 @@ export function SolicitudesList({
                   plataformas={plataformas}
                   esEquipo={esEquipo}
                   gruposExtra={gruposExtra}
+                  usuarioEmail={usuarioEmail}
                 />
               ))}
             </ul>
@@ -167,13 +176,33 @@ function SolicitudCard({
   plataformas,
   esEquipo,
   gruposExtra,
+  usuarioEmail,
 }: {
   solicitud: Solicitud;
   plataformas: Plataforma[];
   esEquipo: boolean;
   gruposExtra: GrupoExtra[];
+  usuarioEmail: string;
 }) {
-  const puedeAccionar = esEquipo && s.estado !== 'completada' && s.estado !== 'rechazada';
+  const esTmallea = usuarioEmail === RESPONSABLE_CORREO;
+  const esMguzman = usuarioEmail === RESPONSABLE_SALESFORCE;
+  const enEsperaSalesforce = s.estado === 'esperando_salesforce';
+  const estadoActivo = s.estado !== 'completada' && s.estado !== 'rechazada';
+
+  const idsAccesos = new Set(s.accesos.map((a) => a.plataformaId));
+  const tieneSalesforce = plataformas.some(
+    (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('salesforce'),
+  );
+
+  // mguzman solo ve el botón de completar cuando el ticket espera Salesforce
+  const puedeCompletarSalesforce = esEquipo && esMguzman && enEsperaSalesforce;
+  // tmallea puede actuar en tickets activos que no estén esperando Salesforce
+  const puedeAccionarTmallea = esEquipo && esTmallea && estadoActivo && !enEsperaSalesforce;
+  // cualquier miembro de equipo puede actuar en tickets no-crear activos
+  const puedeAccionarGeneral =
+    esEquipo && estadoActivo && !enEsperaSalesforce && s.tipo !== 'crear';
+
+  const puedeAccionar = puedeAccionarTmallea || puedeAccionarGeneral || puedeCompletarSalesforce;
 
   return (
     <li className="overflow-hidden rounded-xl border border-border bg-card">
@@ -224,7 +253,7 @@ function SolicitudCard({
           </div>
         )}
 
-        {/* Correo asignado (solo cuando completada) */}
+        {/* Correo asignado */}
         {s.correoCorporativoAsignado && (
           <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-800 dark:bg-emerald-950">
             <span className="text-xs text-emerald-600 dark:text-emerald-400">Correo creado:</span>
@@ -238,15 +267,37 @@ function SolicitudCard({
       {/* Acciones */}
       {puedeAccionar && (
         <div className="space-y-2 border-t border-border bg-muted/10 px-5 py-3">
-          {s.tipo === 'crear' ? (
+          {/* Paso 2: mguzman completa Salesforce */}
+          {puedeCompletarSalesforce && (
+            <div className="flex items-center gap-3">
+              <p className="text-xs text-muted-foreground">
+                Correo creado:{' '}
+                <span className="font-mono font-medium text-foreground">
+                  {s.correoCorporativoAsignado}
+                </span>
+                . Marca el ticket como completado una vez creada la cuenta en Salesforce.
+              </p>
+              <BotonEstado id={s.id} estado="completada" label="Completar ticket" />
+            </div>
+          )}
+
+          {/* Paso 1: tmallea actúa en tickets crear activos */}
+          {puedeAccionarTmallea && s.tipo === 'crear' && (
             <>
-              <CompletarCreacionForm id={s.id} gruposExtra={gruposExtra} />
+              <CompletarCreacionForm
+                id={s.id}
+                gruposExtra={gruposExtra}
+                tieneSalesforce={tieneSalesforce}
+              />
               <div className="flex gap-2 border-t border-border/50 pt-2">
                 <BotonEstado id={s.id} estado="en_proceso" label="Marcar en proceso" />
                 <BotonEstado id={s.id} estado="rechazada" label="Rechazar" />
               </div>
             </>
-          ) : (
+          )}
+
+          {/* Tickets no-crear para cualquier miembro del equipo */}
+          {puedeAccionarGeneral && (
             <div className="flex flex-wrap gap-2">
               <BotonEstado id={s.id} estado="en_proceso" label="Marcar en proceso" />
               <BotonEstado id={s.id} estado="completada" label="Marcar completada" />

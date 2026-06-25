@@ -20,7 +20,12 @@ export interface Plataforma {
 
 export type TipoSolicitud = 'crear' | 'modificar' | 'baja';
 
-export type EstadoSolicitud = 'pendiente' | 'en_proceso' | 'completada' | 'rechazada';
+export type EstadoSolicitud =
+  | 'pendiente'
+  | 'en_proceso'
+  | 'esperando_salesforce'
+  | 'completada'
+  | 'rechazada';
 
 /** Un acceso concreto pedido dentro de una solicitud. */
 export interface AccesoSolicitado {
@@ -39,6 +44,8 @@ export interface DatosCreacion {
   celular: string;
   /** Correo personal donde se envían las credenciales del nuevo @capitalinteligente.cl. */
   correoPersonal: string;
+  /** Contraseña del correo corporativo; se guarda al completar el paso 1 (tmallea). */
+  passwordCorreo?: string;
 }
 
 /** Datos requeridos al MODIFICAR un acceso. */

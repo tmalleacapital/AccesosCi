@@ -95,13 +95,16 @@ export default async function Home({
             {
               id: 'solicitudes',
               label: esEquipo ? 'Todas las solicitudes' : 'Mis solicitudes',
-              badge: solicitudes.filter((s) => s.estado === 'pendiente').length,
+              badge: solicitudes.filter(
+                (s) => s.estado === 'pendiente' || s.estado === 'esperando_salesforce',
+              ).length,
               content: (
                 <SolicitudesList
                   solicitudes={solicitudes}
                   plataformas={plataformas}
                   esEquipo={esEquipo}
                   gruposExtra={gruposExtra}
+                  usuarioEmail={sesion.email}
                 />
               ),
             },

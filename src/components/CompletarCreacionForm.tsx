@@ -63,9 +63,11 @@ function buildBPOptions(gruposExtra: GrupoExtra[]): BPOption[] {
 export function CompletarCreacionForm({
   id,
   gruposExtra = [],
+  tieneSalesforce = false,
 }: {
   id: string;
   gruposExtra?: GrupoExtra[];
+  tieneSalesforce?: boolean;
 }) {
   const [bpKey, setBpKey] = useState('');
   const bpOptions = useMemo(() => buildBPOptions(gruposExtra), [gruposExtra]);
@@ -86,7 +88,11 @@ export function CompletarCreacionForm({
   return (
     <form action={cambiarEstadoAction}>
       <input type="hidden" name="id" value={id} />
-      <input type="hidden" name="estado" value="completada" />
+      <input
+        type="hidden"
+        name="estado"
+        value={tieneSalesforce ? 'esperando_salesforce' : 'completada'}
+      />
       <input type="hidden" name="bpHojaId" value={bpHojaId} />
       <input type="hidden" name="bpGrupoNombre" value={bpGrupoNombre} />
       <input type="hidden" name="bpSlack" value={String(selectedBP?.usaSlack ?? false)} />
@@ -169,7 +175,7 @@ export function CompletarCreacionForm({
           type="submit"
           className="self-end rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 dark:hover:bg-emerald-900"
         >
-          Completar
+          {tieneSalesforce ? 'Completar paso 1 (correo)' : 'Completar'}
         </button>
       </div>
     </form>

@@ -32,8 +32,12 @@ import {
   construirCorreoConfirmacion,
   construirCorreoEnProceso,
   construirCorreoCompletada,
+  construirCorreoParaSalesforce,
+  RESPONSABLE_SALESFORCE,
 } from '@/lib/services/notificaciones.service';
-import type { DatosSolicitud, EstadoSolicitud, TipoSolicitud } from '@/types';
+import type { DatosCreacion, DatosSolicitud, EstadoSolicitud, TipoSolicitud } from '@/types';
+
+const RESPONSABLE_CORREO = 'tmallea@capitalinteligente.cl';
 
 export async function solicitarCodigoAction(_prev: unknown, formData: FormData) {
   const email = String(formData.get('email') ?? '')
@@ -228,6 +232,76 @@ export async function cambiarEstadoAction(formData: FormData) {
   const solicitud = solicitudes.find((s) => s.id === id);
   if (!solicitud) throw new Error(`Solicitud no encontrada: ${id}`);
 
+  const idsAccesos = new Set(solicitud.accesos.map((a) => a.plataformaId));
+  const tieneSalesforce = plataformas.some(
+    (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('salesforce'),
+  );
+
+  // ── Paso 1: tmallea completa correo → esperando_salesforce ─────────────────
+  if (
+    estado === 'esperando_salesforce' &&
+    sesion.email === RESPONSABLE_CORREO &&
+    solicitud.tipo === 'crear' &&
+    tieneSalesforce
+  ) {
+    if (!correoCorporativoAsignado) {
+      throw new Error('Debe indicar el correo @capitalinteligente.cl asignado.');
+    }
+    const datosActualizados: DatosCreacion = {
+      ...(solicitud.datos as DatosCreacion),
+      passwordCorreo,
+    };
+    const solicitudFinal = {
+      ...cambiarEstadoSolicitud(solicitud, 'esperando_salesforce'),
+      correoCorporativoAsignado,
+      datos: datosActualizados,
+    };
+    await actualizarSolicitud(solicitudFinal);
+
+    if (bpHojaId && bpGrupoNombre) {
+      const d = datosActualizados;
+      const nombreCompleto = [d.nombre, d.segundoNombre, d.apellidoPaterno, d.apellidoMaterno]
+        .filter(Boolean)
+        .join(' ');
+      const tieneSlack = plataformas.some(
+        (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('slack'),
+      );
+      const tieneJira = plataformas.some(
+        (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('jira'),
+      );
+      await crearMiembroExtra(
+        bpHojaId,
+        bpGrupoNombre,
+        nombreCompleto,
+        correoCorporativoAsignado,
+        tieneSlack,
+        tieneJira,
+        '',
+      );
+    }
+
+    const correoMguzman = construirCorreoParaSalesforce(solicitudFinal, plataformas);
+    await enviarCorreo(correoMguzman.to, correoMguzman.subject, correoMguzman.body);
+    revalidatePath('/');
+    return;
+  }
+
+  // ── Paso 2: mguzman completa Salesforce → completada ───────────────────────
+  if (
+    estado === 'completada' &&
+    sesion.email === RESPONSABLE_SALESFORCE &&
+    solicitud.estado === 'esperando_salesforce'
+  ) {
+    const passwordAlmacenada = (solicitud.datos as DatosCreacion).passwordCorreo;
+    const solicitudFinal = cambiarEstadoSolicitud(solicitud, 'completada');
+    await actualizarSolicitud(solicitudFinal);
+    const correo = construirCorreoCompletada(solicitudFinal, plataformas, passwordAlmacenada);
+    await enviarCorreo(correo.to, correo.subject, correo.body);
+    revalidatePath('/');
+    return;
+  }
+
+  // ── Flujo normal (tickets sin Salesforce o que no son tipo crear) ───────────
   if (solicitud.tipo === 'crear' && estado === 'completada' && !correoCorporativoAsignado) {
     throw new Error(
       'Debe indicar el correo @capitalinteligente.cl asignado para completar la creación.',
@@ -248,19 +322,16 @@ export async function cambiarEstadoAction(formData: FormData) {
     await enviarCorreo(correo.to, correo.subject, correo.body);
 
     if (solicitudFinal.tipo === 'crear' && correoCorporativoAsignado && bpHojaId && bpGrupoNombre) {
-      const d = solicitudFinal.datos as import('@/types').DatosCreacion;
+      const d = solicitudFinal.datos as DatosCreacion;
       const nombreCompleto = [d.nombre, d.segundoNombre, d.apellidoPaterno, d.apellidoMaterno]
         .filter(Boolean)
         .join(' ');
-
-      const idsAccesos = new Set(solicitudFinal.accesos.map((a) => a.plataformaId));
       const tieneSlack = plataformas.some(
         (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('slack'),
       );
       const tieneJira = plataformas.some(
         (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('jira'),
       );
-
       await crearMiembroExtra(
         bpHojaId,
         bpGrupoNombre,

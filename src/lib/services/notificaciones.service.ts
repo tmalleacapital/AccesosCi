@@ -232,6 +232,63 @@ export function construirCorreoCompletada(
   };
 }
 
+export const RESPONSABLE_SALESFORCE = 'mguzman@capitalinteligente.cl';
+
+export function construirCorreoParaSalesforce(
+  solicitud: Solicitud,
+  plataformas: Plataforma[],
+): CorreoSimulado {
+  const etiqueta = ETIQUETA_TIPO[solicitud.tipo] ?? solicitud.tipo;
+  const d = solicitud.datos as DatosCreacion;
+  const nombreCompleto = [d.nombre, d.segundoNombre, d.apellidoPaterno, d.apellidoMaterno]
+    .filter(Boolean)
+    .join(' ');
+
+  const filasPlataformas = solicitud.accesos
+    .map(
+      (a) =>
+        `<tr><td style="padding:6px 12px;color:#111">· ${nombrePlataforma(a.plataformaId, plataformas)}</td></tr>`,
+    )
+    .join('');
+
+  return {
+    to: RESPONSABLE_SALESFORCE,
+    subject: `[Pendiente Salesforce] Ticket ${solicitud.id}`,
+    body: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#111">
+        <h2 style="margin-bottom:4px">Paso 2: Crear cuenta en Salesforce</h2>
+        <p style="color:#888;margin-top:0">Ticket <strong>${solicitud.id}</strong> · ${etiqueta}</p>
+        <p>El correo corporativo fue creado. Por favor crea la cuenta en Salesforce y luego marca el ticket como completado en el sistema.</p>
+
+        <table style="width:100%;border-collapse:collapse;margin-top:16px;background:#f0fdf4;border-radius:8px;overflow:hidden;border:1px solid #bbf7d0">
+          <thead>
+            <tr><th colspan="2" style="padding:10px 12px;text-align:left;background:#dcfce7;font-size:0.85rem;color:#166534">✅ CORREO CREADO</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:8px 12px;font-weight:600;color:#166534;white-space:nowrap;width:1%">Nombre</td>
+              <td style="padding:8px 12px;color:#15803d">${nombreCompleto}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 12px;font-weight:600;color:#166534;white-space:nowrap">Correo corporativo</td>
+              <td style="padding:8px 12px;font-size:1.05rem;font-weight:700;color:#15803d;font-family:monospace">${solicitud.correoCorporativoAsignado ?? '—'}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table style="width:100%;border-collapse:collapse;margin-top:16px;background:#f9f9f9;border-radius:8px;overflow:hidden">
+          <thead>
+            <tr><th style="padding:10px 12px;text-align:left;background:#eee;font-size:0.85rem;color:#555">PLATAFORMAS SOLICITADAS</th></tr>
+          </thead>
+          <tbody>${filasPlataformas}</tbody>
+        </table>
+
+        <p style="margin-top:24px;font-size:0.8rem;color:#aaa">Este mensaje fue generado automáticamente por Solicitudes de Accesos · Capital Inteligente.</p>
+      </div>
+    `,
+  };
+}
+
 export function construirCorreoSolicitud(
   solicitud: Solicitud,
   plataformas: Plataforma[],
