@@ -2,7 +2,9 @@ import 'server-only';
 import { createClient } from '@supabase/supabase-js';
 import type { Plataforma, Solicitud, Usuario } from '@/types';
 
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+function getSupabase() {
+  return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+}
 
 // Tipo interno que refleja las columnas en snake_case de la BD.
 interface SolicitudRow {
@@ -34,7 +36,7 @@ function rowToSolicitud(row: SolicitudRow): Solicitud {
 }
 
 export async function leerUsuarios(): Promise<Usuario[]> {
-  const { data, error } = await supabase.from('usuarios').select('email, nombre, rol');
+  const { data, error } = await getSupabase().from('usuarios').select('email, nombre, rol');
   if (error) throw new Error(`leerUsuarios: ${error.message}`);
   return (data ?? []).map((row) => ({
     email: row.email as string,
@@ -45,7 +47,7 @@ export async function leerUsuarios(): Promise<Usuario[]> {
 }
 
 export async function leerPlataformas(): Promise<Plataforma[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('plataformas')
     .select('id, nombre, facturable, activa')
     .eq('activa', true)
@@ -55,7 +57,7 @@ export async function leerPlataformas(): Promise<Plataforma[]> {
 }
 
 export async function leerSolicitudes(): Promise<Solicitud[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('solicitudes')
     .select('*')
     .order('fecha_creacion', { ascending: false });
@@ -64,23 +66,25 @@ export async function leerSolicitudes(): Promise<Solicitud[]> {
 }
 
 export async function guardarSolicitud(solicitud: Solicitud): Promise<void> {
-  const { error } = await supabase.from('solicitudes').insert({
-    id: solicitud.id,
-    tipo: solicitud.tipo,
-    solicitante_email: solicitud.solicitanteEmail,
-    fecha_creacion: solicitud.fechaCreacion,
-    estado: solicitud.estado,
-    datos: solicitud.datos,
-    accesos: solicitud.accesos,
-    comentario: solicitud.comentario ?? null,
-    correo_corporativo_asignado: solicitud.correoCorporativoAsignado ?? null,
-  });
+  const { error } = await getSupabase()
+    .from('solicitudes')
+    .insert({
+      id: solicitud.id,
+      tipo: solicitud.tipo,
+      solicitante_email: solicitud.solicitanteEmail,
+      fecha_creacion: solicitud.fechaCreacion,
+      estado: solicitud.estado,
+      datos: solicitud.datos,
+      accesos: solicitud.accesos,
+      comentario: solicitud.comentario ?? null,
+      correo_corporativo_asignado: solicitud.correoCorporativoAsignado ?? null,
+    });
   if (error) throw new Error(`guardarSolicitud: ${error.message}`);
 }
 
 /** Devuelve un mapa { "correo||campo": valor } con todos los overrides del directorio. */
 export async function leerEdicionesCorreos(): Promise<Record<string, string>> {
-  const { data, error } = await supabase.from('correos_edits').select('correo, campo, valor');
+  const { data, error } = await getSupabase().from('correos_edits').select('correo, campo, valor');
   if (error) throw new Error(`leerEdicionesCorreos: ${error.message}`);
   const mapa: Record<string, string> = {};
   for (const row of data ?? []) {
@@ -94,7 +98,7 @@ export async function guardarEdicionCorreo(
   campo: string,
   valor: string,
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('correos_edits')
     .upsert({ correo, campo, valor }, { onConflict: 'correo,campo' });
   if (error) throw new Error(`guardarEdicionCorreo: ${error.message}`);
@@ -106,7 +110,7 @@ export interface HojaExtra {
 }
 
 export async function leerHojasExtra(): Promise<HojaExtra[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('hojas_extra')
     .select('id, nombre')
     .order('created_at');
@@ -118,7 +122,7 @@ export async function leerHojasExtra(): Promise<HojaExtra[]> {
 }
 
 export async function crearHojaExtra(nombre: string): Promise<void> {
-  const { error } = await supabase.from('hojas_extra').insert({ nombre });
+  const { error } = await getSupabase().from('hojas_extra').insert({ nombre });
   if (error) throw new Error(`crearHojaExtra: ${error.message}`);
 }
 
@@ -129,7 +133,7 @@ export interface GrupoExtra {
 }
 
 export async function leerGruposExtra(): Promise<GrupoExtra[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('grupos_extra')
     .select('id, hoja_id, nombre')
     .order('created_at');
@@ -142,17 +146,17 @@ export async function leerGruposExtra(): Promise<GrupoExtra[]> {
 }
 
 export async function crearGrupoExtra(hojaId: string, nombre: string): Promise<void> {
-  const { error } = await supabase.from('grupos_extra').insert({ hoja_id: hojaId, nombre });
+  const { error } = await getSupabase().from('grupos_extra').insert({ hoja_id: hojaId, nombre });
   if (error) throw new Error(`crearGrupoExtra: ${error.message}`);
 }
 
 export async function eliminarGrupoExtra(id: string): Promise<void> {
-  const { error } = await supabase.from('grupos_extra').delete().eq('id', id);
+  const { error } = await getSupabase().from('grupos_extra').delete().eq('id', id);
   if (error) throw new Error(`eliminarGrupoExtra: ${error.message}`);
 }
 
 export async function leerGruposOcultos(): Promise<{ hojaId: string; nombre: string }[]> {
-  const { data, error } = await supabase.from('grupos_ocultos').select('hoja_id, nombre');
+  const { data, error } = await getSupabase().from('grupos_ocultos').select('hoja_id, nombre');
   if (error) throw new Error(`leerGruposOcultos: ${error.message}`);
   return (data ?? []).map((row) => ({
     hojaId: row.hoja_id as string,
@@ -161,7 +165,7 @@ export async function leerGruposOcultos(): Promise<{ hojaId: string; nombre: str
 }
 
 export async function ocultarGrupo(hojaId: string, nombre: string): Promise<void> {
-  const { error } = await supabase.from('grupos_ocultos').insert({ hoja_id: hojaId, nombre });
+  const { error } = await getSupabase().from('grupos_ocultos').insert({ hoja_id: hojaId, nombre });
   if (error) throw new Error(`ocultarGrupo: ${error.message}`);
 }
 
@@ -178,7 +182,7 @@ export interface MiembroExtra {
 }
 
 export async function leerMiembrosExtra(): Promise<MiembroExtra[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('miembros_extra')
     .select('id, hoja_id, grupo_nombre, nombre, correo, slack, jira, sf, estado')
     .order('created_at');
@@ -209,7 +213,7 @@ export async function crearMiembroExtra(
   jira: boolean,
   sf: string,
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('miembros_extra')
     .insert({ hoja_id: hojaId, grupo_nombre: grupoNombre, nombre, correo, slack, jira, sf });
   if (error) throw new Error(`crearMiembroExtra: ${error.message}`);
@@ -220,7 +224,7 @@ export async function transferirMiembroExtra(
   newHojaId: string,
   newGrupoNombre: string,
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('miembros_extra')
     .update({ hoja_id: newHojaId, grupo_nombre: newGrupoNombre })
     .eq('correo', correo);
@@ -228,7 +232,7 @@ export async function transferirMiembroExtra(
 }
 
 export async function borrarEdicionesEliminado(correo: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('correos_edits')
     .delete()
     .eq('correo', correo)
@@ -237,7 +241,7 @@ export async function borrarEdicionesEliminado(correo: string): Promise<void> {
 }
 
 export async function actualizarSolicitud(actualizada: Solicitud): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('solicitudes')
     .update({
       estado: actualizada.estado,
