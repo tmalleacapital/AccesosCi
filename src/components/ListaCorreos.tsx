@@ -575,7 +575,7 @@ function TablaGrupo({
     (a) =>
       !eliminadas.has(a.correo) &&
       edits[estKey(a.correo, 'eliminado')] !== 'true' &&
-      edits[estKey(a.correo, 'transferido')] !== 'true',
+      (a.esDinamico || edits[estKey(a.correo, 'transferido')] !== 'true'),
   );
 
   return (
