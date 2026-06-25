@@ -96,7 +96,10 @@ export default async function Home({
               id: 'solicitudes',
               label: esEquipo ? 'Todas las solicitudes' : 'Mis solicitudes',
               badge: solicitudes.filter(
-                (s) => s.estado === 'pendiente' || s.estado === 'esperando_salesforce',
+                (s) =>
+                  s.estado === 'pendiente' ||
+                  s.estado === 'esperando_salesforce' ||
+                  s.estado === 'esperando_jira',
               ).length,
               content: (
                 <SolicitudesList

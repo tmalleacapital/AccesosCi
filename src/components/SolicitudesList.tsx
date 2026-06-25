@@ -15,6 +15,7 @@ import type { GrupoExtra } from '@/lib/db';
 
 const RESPONSABLE_CORREO = 'tmallea@capitalinteligente.cl';
 const RESPONSABLE_SALESFORCE = 'mguzman@capitalinteligente.cl';
+const RESPONSABLE_JIRA = 'cpeede@capitalinteligente.cl';
 
 const ESTADO_ESTILO: Record<EstadoSolicitud, string> = {
   pendiente:
@@ -23,6 +24,8 @@ const ESTADO_ESTILO: Record<EstadoSolicitud, string> = {
     'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400',
   esperando_salesforce:
     'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-400',
+  esperando_jira:
+    'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-400',
   completada:
     'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400',
   rechazada:
@@ -33,6 +36,7 @@ const ESTADO_LABEL: Record<EstadoSolicitud, string> = {
   pendiente: 'Pendiente',
   en_proceso: 'En proceso',
   esperando_salesforce: 'Esperando Salesforce',
+  esperando_jira: 'Esperando Jira',
   completada: 'Completada',
   rechazada: 'Rechazada',
 };
@@ -186,23 +190,34 @@ function SolicitudCard({
 }) {
   const esTmallea = usuarioEmail === RESPONSABLE_CORREO;
   const esMguzman = usuarioEmail === RESPONSABLE_SALESFORCE;
+  const esCpeede = usuarioEmail === RESPONSABLE_JIRA;
   const enEsperaSalesforce = s.estado === 'esperando_salesforce';
+  const enEsperaJira = s.estado === 'esperando_jira';
+  const enEspera = enEsperaSalesforce || enEsperaJira;
   const estadoActivo = s.estado !== 'completada' && s.estado !== 'rechazada';
 
   const idsAccesos = new Set(s.accesos.map((a) => a.plataformaId));
   const tieneSalesforce = plataformas.some(
     (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('salesforce'),
   );
+  const tieneJira = plataformas.some(
+    (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('jira'),
+  );
 
-  // mguzman solo ve el botón de completar cuando el ticket espera Salesforce
+  // Próximo estado cuando tmallea completa paso 1
+  const nextEstado: EstadoSolicitud = tieneSalesforce
+    ? 'esperando_salesforce'
+    : tieneJira
+      ? 'esperando_jira'
+      : 'completada';
+
   const puedeCompletarSalesforce = esEquipo && esMguzman && enEsperaSalesforce;
-  // tmallea puede actuar en tickets activos que no estén esperando Salesforce
-  const puedeAccionarTmallea = esEquipo && esTmallea && estadoActivo && !enEsperaSalesforce;
-  // cualquier miembro de equipo puede actuar en tickets no-crear activos
-  const puedeAccionarGeneral =
-    esEquipo && estadoActivo && !enEsperaSalesforce && s.tipo !== 'crear';
+  const puedeCompletarJira = esEquipo && esCpeede && enEsperaJira;
+  const puedeAccionarTmallea = esEquipo && esTmallea && estadoActivo && !enEspera;
+  const puedeAccionarGeneral = esEquipo && estadoActivo && !enEspera && s.tipo !== 'crear';
 
-  const puedeAccionar = puedeAccionarTmallea || puedeAccionarGeneral || puedeCompletarSalesforce;
+  const puedeAccionar =
+    puedeAccionarTmallea || puedeAccionarGeneral || puedeCompletarSalesforce || puedeCompletarJira;
 
   return (
     <li className="overflow-hidden rounded-xl border border-border bg-card">
@@ -281,14 +296,24 @@ function SolicitudCard({
             </div>
           )}
 
+          {/* Paso 3: cpeede completa Jira */}
+          {puedeCompletarJira && (
+            <div className="flex items-center gap-3">
+              <p className="text-xs text-muted-foreground">
+                Correo creado:{' '}
+                <span className="font-mono font-medium text-foreground">
+                  {s.correoCorporativoAsignado}
+                </span>
+                . Marca el ticket como completado una vez creada la cuenta en Jira.
+              </p>
+              <BotonEstado id={s.id} estado="completada" label="Completar ticket" />
+            </div>
+          )}
+
           {/* Paso 1: tmallea actúa en tickets crear activos */}
           {puedeAccionarTmallea && s.tipo === 'crear' && (
             <>
-              <CompletarCreacionForm
-                id={s.id}
-                gruposExtra={gruposExtra}
-                tieneSalesforce={tieneSalesforce}
-              />
+              <CompletarCreacionForm id={s.id} gruposExtra={gruposExtra} nextEstado={nextEstado} />
               <div className="flex gap-2 border-t border-border/50 pt-2">
                 <BotonEstado id={s.id} estado="en_proceso" label="Marcar en proceso" />
                 <BotonEstado id={s.id} estado="rechazada" label="Rechazar" />

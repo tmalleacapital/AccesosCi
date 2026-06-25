@@ -24,6 +24,7 @@ export type EstadoSolicitud =
   | 'pendiente'
   | 'en_proceso'
   | 'esperando_salesforce'
+  | 'esperando_jira'
   | 'completada'
   | 'rechazada';
 

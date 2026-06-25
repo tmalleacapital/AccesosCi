@@ -33,7 +33,9 @@ import {
   construirCorreoEnProceso,
   construirCorreoCompletada,
   construirCorreoParaSalesforce,
+  construirCorreoParaJira,
   RESPONSABLE_SALESFORCE,
+  RESPONSABLE_JIRA,
 } from '@/lib/services/notificaciones.service';
 import type { DatosCreacion, DatosSolicitud, EstadoSolicitud, TipoSolicitud } from '@/types';
 
@@ -236,13 +238,15 @@ export async function cambiarEstadoAction(formData: FormData) {
   const tieneSalesforce = plataformas.some(
     (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('salesforce'),
   );
+  const tieneJira = plataformas.some(
+    (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('jira'),
+  );
 
-  // ── Paso 1: tmallea completa correo → esperando_salesforce ─────────────────
+  // ── Paso 1: tmallea completa correo → esperando_salesforce | esperando_jira ─
   if (
-    estado === 'esperando_salesforce' &&
+    (estado === 'esperando_salesforce' || estado === 'esperando_jira') &&
     sesion.email === RESPONSABLE_CORREO &&
-    solicitud.tipo === 'crear' &&
-    tieneSalesforce
+    solicitud.tipo === 'crear'
   ) {
     if (!correoCorporativoAsignado) {
       throw new Error('Debe indicar el correo @capitalinteligente.cl asignado.');
@@ -252,7 +256,7 @@ export async function cambiarEstadoAction(formData: FormData) {
       passwordCorreo,
     };
     const solicitudFinal = {
-      ...cambiarEstadoSolicitud(solicitud, 'esperando_salesforce'),
+      ...cambiarEstadoSolicitud(solicitud, estado),
       correoCorporativoAsignado,
       datos: datosActualizados,
     };
@@ -266,9 +270,6 @@ export async function cambiarEstadoAction(formData: FormData) {
       const tieneSlack = plataformas.some(
         (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('slack'),
       );
-      const tieneJira = plataformas.some(
-        (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('jira'),
-      );
       await crearMiembroExtra(
         bpHojaId,
         bpGrupoNombre,
@@ -280,27 +281,64 @@ export async function cambiarEstadoAction(formData: FormData) {
       );
     }
 
-    const correoMguzman = construirCorreoParaSalesforce(solicitudFinal, plataformas);
-    await enviarCorreo(correoMguzman.to, correoMguzman.subject, correoMguzman.body);
+    if (estado === 'esperando_salesforce') {
+      const correoMguzman = construirCorreoParaSalesforce(solicitudFinal, plataformas);
+      await enviarCorreo(correoMguzman.to, correoMguzman.subject, correoMguzman.body);
+    } else {
+      const correoJira = construirCorreoParaJira(solicitudFinal, plataformas);
+      await enviarCorreo(correoJira.to, correoJira.subject, correoJira.body);
+    }
     revalidatePath('/');
     return;
   }
 
-  // ── Paso 2: mguzman completa Salesforce → completada ───────────────────────
+  // ── Paso 2: mguzman completa Salesforce → esperando_jira | completada ──────
   if (
     estado === 'completada' &&
     sesion.email === RESPONSABLE_SALESFORCE &&
     solicitud.estado === 'esperando_salesforce'
   ) {
     const passwordAlmacenada = (solicitud.datos as DatosCreacion).passwordCorreo;
+
+    if (tieneJira) {
+      // Aún falta el paso de Jira
+      const solicitudFinal = {
+        ...cambiarEstadoSolicitud(solicitud, 'esperando_jira'),
+      };
+      await actualizarSolicitud(solicitudFinal);
+      const correoJira = construirCorreoParaJira(solicitudFinal, plataformas);
+      await enviarCorreo(correoJira.to, correoJira.subject, correoJira.body);
+    } else {
+      const solicitudFinal = cambiarEstadoSolicitud(solicitud, 'completada');
+      await actualizarSolicitud(solicitudFinal);
+      const correo = construirCorreoCompletada(solicitudFinal, plataformas, passwordAlmacenada);
+      const correoPersonalSf = (solicitudFinal.datos as DatosCreacion).correoPersonal;
+      await Promise.all([
+        enviarCorreo(correo.to, correo.subject, correo.body),
+        ...(correoPersonalSf && correoPersonalSf !== correo.to
+          ? [enviarCorreo(correoPersonalSf, correo.subject, correo.body)]
+          : []),
+      ]);
+    }
+    revalidatePath('/');
+    return;
+  }
+
+  // ── Paso 3: cpeede completa Jira → completada ──────────────────────────────
+  if (
+    estado === 'completada' &&
+    sesion.email === RESPONSABLE_JIRA &&
+    solicitud.estado === 'esperando_jira'
+  ) {
+    const passwordAlmacenada = (solicitud.datos as DatosCreacion).passwordCorreo;
     const solicitudFinal = cambiarEstadoSolicitud(solicitud, 'completada');
     await actualizarSolicitud(solicitudFinal);
     const correo = construirCorreoCompletada(solicitudFinal, plataformas, passwordAlmacenada);
-    const correoPersonalSf = (solicitudFinal.datos as DatosCreacion).correoPersonal;
+    const correoPersonalJira = (solicitudFinal.datos as DatosCreacion).correoPersonal;
     await Promise.all([
       enviarCorreo(correo.to, correo.subject, correo.body),
-      ...(correoPersonalSf && correoPersonalSf !== correo.to
-        ? [enviarCorreo(correoPersonalSf, correo.subject, correo.body)]
+      ...(correoPersonalJira && correoPersonalJira !== correo.to
+        ? [enviarCorreo(correoPersonalJira, correo.subject, correo.body)]
         : []),
     ]);
     revalidatePath('/');
