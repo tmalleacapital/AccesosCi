@@ -928,6 +928,7 @@ export function ListaCorreos({
   const [hojaActiva, setHojaActiva] = useState(data.hojas[0]?.id);
   const [creandoMBP, setCreandoMBP] = useState(false);
   const [transfiriendo, setTransfiriendo] = useState<TransferirDatos | null>(null);
+  const [errorTransferir, setErrorTransferir] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [confirming, setConfirming] = useState<{ correo: string; nombre: string } | null>(null);
   const [undoItem, setUndoItem] = useState<{ correo: string; nombre: string } | null>(null);
@@ -1084,20 +1085,25 @@ export function ListaCorreos({
     if (!transfiriendo) return;
     const datos = transfiriendo;
     setTransfiriendo(null);
-    startTransition(() => {
-      transferirCorreoAction(
-        datos.correo,
-        {
-          nombre: datos.nombre,
-          slack: datos.slack,
-          jira: datos.jira,
-          sf: datos.sf,
-          estado: datos.estado,
-        },
-        hojaId,
-        grupoNombre,
-        datos.esDinamico,
-      );
+    setErrorTransferir(null);
+    startTransition(async () => {
+      try {
+        await transferirCorreoAction(
+          datos.correo,
+          {
+            nombre: datos.nombre,
+            slack: datos.slack,
+            jira: datos.jira,
+            sf: datos.sf,
+            estado: datos.estado,
+          },
+          hojaId,
+          grupoNombre,
+          datos.esDinamico,
+        );
+      } catch (e) {
+        setErrorTransferir(e instanceof Error ? e.message : 'Error al transferir el correo.');
+      }
     });
   }
 
@@ -1252,6 +1258,21 @@ export function ListaCorreos({
           ))
         )}
       </div>
+
+      {errorTransferir &&
+        createPortal(
+          <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-xl dark:border-rose-800 dark:bg-rose-950 dark:text-rose-400">
+            {errorTransferir}
+            <button
+              type="button"
+              onClick={() => setErrorTransferir(null)}
+              className="ml-3 font-semibold underline"
+            >
+              Cerrar
+            </button>
+          </div>,
+          document.body,
+        )}
 
       {transfiriendo &&
         createPortal(
