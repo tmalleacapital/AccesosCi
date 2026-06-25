@@ -29,6 +29,7 @@ export default async function Home({
 
   const { creada } = await searchParams;
   const esEquipo = sesion.rol === 'equipo' || sesion.rol === 'admin';
+  const esBP = sesion.rol === 'bp';
 
   const [
     plataformas,
@@ -41,10 +42,10 @@ export default async function Home({
   ] = await Promise.all([
     leerPlataformas(),
     leerSolicitudes(),
-    esEquipo ? leerEdicionesCorreos() : Promise.resolve({}),
+    esEquipo || esBP ? leerEdicionesCorreos() : Promise.resolve({}),
     sesion.rol === 'admin' ? leerGruposExtra() : Promise.resolve([]),
     sesion.rol === 'admin' ? leerGruposOcultos() : Promise.resolve([]),
-    esEquipo ? leerMiembrosExtra() : Promise.resolve([]),
+    esEquipo || esBP ? leerMiembrosExtra() : Promise.resolve([]),
     sesion.rol === 'admin' ? leerHojasExtra() : Promise.resolve([]),
   ]);
 
@@ -67,7 +68,9 @@ export default async function Home({
                 ? 'Administrador'
                 : sesion.rol === 'equipo'
                   ? 'Equipo de Accesos'
-                  : 'Solicitante'}
+                  : sesion.rol === 'bp'
+                    ? 'Business Partner'
+                    : 'Solicitante'}
             </p>
           </div>
           <form action={logoutAction}>
@@ -115,7 +118,7 @@ export default async function Home({
                 />
               ),
             },
-            ...(sesion.rol === 'admin'
+            ...(sesion.rol === 'admin' || esBP
               ? [
                   {
                     id: 'correos',
@@ -127,6 +130,8 @@ export default async function Home({
                         gruposOcultos={gruposOcultos}
                         miembrosExtra={miembrosExtra}
                         hojasExtra={hojasExtra}
+                        soloLectura={esBP}
+                        filtroCorreo={esBP ? sesion.email : undefined}
                       />
                     ),
                   },

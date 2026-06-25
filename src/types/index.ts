@@ -1,6 +1,6 @@
 // Tipos de dominio de "Solicitudes de Accesos".
 
-export type Rol = 'solicitante' | 'equipo' | 'admin';
+export type Rol = 'solicitante' | 'equipo' | 'admin' | 'bp';
 
 export interface Usuario {
   email: string; // siempre @capitalinteligente.cl

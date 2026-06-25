@@ -288,6 +288,7 @@ function FilaAsesor({
   onEdit,
   onEliminar,
   onTransferir,
+  soloLectura = false,
 }: {
   asesor: Asesor;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
@@ -295,6 +296,7 @@ function FilaAsesor({
   onEdit: (campo: string, valor: string) => void;
   onEliminar: () => void;
   onTransferir: (datos: TransferirDatos) => void;
+  soloLectura?: boolean;
 }) {
   const orig = asesor.correo;
 
@@ -314,23 +316,34 @@ function FilaAsesor({
   const tl = val('tl') === 'true';
   const fecha = val('fechaEliminacion');
 
+  const estadoActivo = (estado || 'Activo').toLowerCase() === 'activo';
+
   return (
     <tr className="group border-b border-border last:border-0 hover:bg-muted/20">
       {/* Nombre */}
       <td className="px-3 py-2 text-foreground">
         <div className="flex min-w-0 items-center gap-1.5">
-          <CeldaTexto valor={nombre} onSave={(v) => onEdit('nombre', v)} className="truncate" />
-          {tl && (
-            <button
-              type="button"
-              title="T.L — clic para quitar"
-              onClick={() => onEdit('tl', 'false')}
-              className="rounded bg-amber-100 px-1 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-            >
-              T.L
-            </button>
+          {soloLectura ? (
+            <span className="truncate">{nombre}</span>
+          ) : (
+            <CeldaTexto valor={nombre} onSave={(v) => onEdit('nombre', v)} className="truncate" />
           )}
-          {!tl && (
+          {tl &&
+            (soloLectura ? (
+              <span className="rounded bg-amber-100 px-1 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                T.L
+              </span>
+            ) : (
+              <button
+                type="button"
+                title="T.L — clic para quitar"
+                onClick={() => onEdit('tl', 'false')}
+                className="rounded bg-amber-100 px-1 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400"
+              >
+                T.L
+              </button>
+            ))}
+          {!tl && !soloLectura && (
             <button
               type="button"
               title="Marcar como Team Leader"
@@ -345,114 +358,161 @@ function FilaAsesor({
 
       {/* Correo */}
       <td className="max-w-0 px-3 py-2">
-        <CeldaTexto
-          valor={correo}
-          onSave={(v) => onEdit('correo', v)}
-          className="block truncate font-mono text-xs text-muted-foreground"
-        />
+        {soloLectura ? (
+          <span className="block truncate font-mono text-xs text-muted-foreground">{correo}</span>
+        ) : (
+          <CeldaTexto
+            valor={correo}
+            onSave={(v) => onEdit('correo', v)}
+            className="block truncate font-mono text-xs text-muted-foreground"
+          />
+        )}
       </td>
 
       {/* Estado */}
       <td className="px-3 py-2">
-        <EstadoBadge estado={estado || 'Activo'} onSave={(v) => onEdit('estado', v)} />
+        {soloLectura ? (
+          <span
+            className={cn(
+              'rounded-full border px-2 py-0.5 text-xs font-medium',
+              estadoActivo
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400'
+                : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-400',
+            )}
+          >
+            {estado || 'Activo'}
+          </span>
+        ) : (
+          <EstadoBadge estado={estado || 'Activo'} onSave={(v) => onEdit('estado', v)} />
+        )}
       </td>
 
       {/* Jira */}
       {columnas.jira && (
         <td className="px-3 py-2 text-center">
-          <ToggleBool valor={jira} onToggle={() => onEdit('jira', jira ? 'false' : 'true')} />
+          {soloLectura ? (
+            <span className="text-base leading-none">
+              {jira ? (
+                <span className="text-emerald-600 dark:text-emerald-400">✓</span>
+              ) : (
+                <span className="text-muted-foreground/40">—</span>
+              )}
+            </span>
+          ) : (
+            <ToggleBool valor={jira} onToggle={() => onEdit('jira', jira ? 'false' : 'true')} />
+          )}
         </td>
       )}
 
       {/* Slack */}
       {columnas.slack && (
         <td className="px-3 py-2 text-center">
-          <ToggleBool valor={slack} onToggle={() => onEdit('slack', slack ? 'false' : 'true')} />
+          {soloLectura ? (
+            <span className="text-base leading-none">
+              {slack ? (
+                <span className="text-emerald-600 dark:text-emerald-400">✓</span>
+              ) : (
+                <span className="text-muted-foreground/40">—</span>
+              )}
+            </span>
+          ) : (
+            <ToggleBool valor={slack} onToggle={() => onEdit('slack', slack ? 'false' : 'true')} />
+          )}
         </td>
       )}
 
       {/* Salesforce */}
       {columnas.sf && (
         <td className="px-3 py-2">
-          <CeldaSelect
-            valor={sf}
-            opciones={['', 'Portal', 'Cloud']}
-            onSave={(v) => onEdit('sf', v)}
-          />
+          {soloLectura ? (
+            <span className="text-xs text-muted-foreground">{sf || '—'}</span>
+          ) : (
+            <CeldaSelect
+              valor={sf}
+              opciones={['', 'Portal', 'Cloud']}
+              onSave={(v) => onEdit('sf', v)}
+            />
+          )}
         </td>
       )}
 
       {/* Fecha baja */}
       {columnas.fecha && (
         <td className="whitespace-nowrap px-3 py-2">
-          <CeldaTexto
-            valor={formatFecha(fecha)}
-            onSave={(v) => onEdit('fechaEliminacion', v)}
-            className="text-xs text-muted-foreground"
-          />
+          {soloLectura ? (
+            <span className="text-xs text-muted-foreground">{formatFecha(fecha)}</span>
+          ) : (
+            <CeldaTexto
+              valor={formatFecha(fecha)}
+              onSave={(v) => onEdit('fechaEliminacion', v)}
+              className="text-xs text-muted-foreground"
+            />
+          )}
         </td>
       )}
 
       {/* Acciones */}
-      <td className="px-1 py-2 text-center">
-        <div className="flex items-center justify-center gap-0.5">
-          <button
-            type="button"
-            title="Transferir a otro BP"
-            onClick={() =>
-              onTransferir({
-                correo: orig,
-                nombre,
-                slack,
-                jira,
-                sf,
-                estado,
-                esDinamico: !!asesor.esDinamico,
-              })
-            }
-            className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-sky-50 hover:text-sky-600 group-hover:opacity-100 dark:hover:bg-sky-950/40"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+      {!soloLectura && (
+        <td className="px-1 py-2 text-center">
+          <div className="flex items-center justify-center gap-0.5">
+            <button
+              type="button"
+              title="Transferir a otro BP"
+              onClick={() =>
+                onTransferir({
+                  correo: orig,
+                  nombre,
+                  slack,
+                  jira,
+                  sf,
+                  estado,
+                  esDinamico: !!asesor.esDinamico,
+                })
+              }
+              className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-sky-50 hover:text-sky-600 group-hover:opacity-100 dark:hover:bg-sky-950/40"
             >
-              <path d="M5 12h14" />
-              <path d="m12 5 7 7-7 7" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            title="Eliminar asesor"
-            onClick={onEliminar}
-            className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-rose-50 hover:text-rose-600 group-hover:opacity-100 dark:hover:bg-rose-950/40"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              title="Eliminar asesor"
+              onClick={onEliminar}
+              className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-rose-50 hover:text-rose-600 group-hover:opacity-100 dark:hover:bg-rose-950/40"
             >
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-              <path d="M10 11v6" />
-              <path d="M14 11v6" />
-              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-            </svg>
-          </button>
-        </div>
-      </td>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+            </button>
+          </div>
+        </td>
+      )}
     </tr>
   );
 }
@@ -564,6 +624,7 @@ function TablaGrupo({
   onEditMetrica,
   onEliminar,
   onTransferir,
+  soloLectura = false,
 }: {
   grupo: Grupo;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
@@ -573,6 +634,7 @@ function TablaGrupo({
   onEditMetrica: (label: string, valor: number) => void;
   onEliminar: (correo: string, nombre: string) => void;
   onTransferir: (datos: TransferirDatos) => void;
+  soloLectura?: boolean;
 }) {
   const metricas = useMemo(
     () => calcularMetricasDinamicas(grupo, edits, eliminadas),
@@ -594,7 +656,7 @@ function TablaGrupo({
           {asesoresVisibles.length}
         </span>
         {metricas.map((m) =>
-          m.label === 'Cuentas Portal Creadas' ? (
+          m.label === 'Cuentas Portal Creadas' && !soloLectura ? (
             <BadgeNumeroEditable
               key={m.label}
               label={m.label}
@@ -633,7 +695,7 @@ function TablaGrupo({
                   Fecha baja
                 </th>
               )}
-              <th className="w-16" />
+              {!soloLectura && <th className="w-16" />}
             </tr>
           </thead>
           <tbody>
@@ -648,6 +710,7 @@ function TablaGrupo({
                   onEliminar(a.correo, edits[estKey(a.correo, 'nombre')] ?? a.nombre)
                 }
                 onTransferir={onTransferir}
+                soloLectura={soloLectura}
               />
             ))}
           </tbody>
@@ -921,12 +984,16 @@ export function ListaCorreos({
   gruposOcultos = [],
   miembrosExtra = [],
   hojasExtra = [],
+  soloLectura = false,
+  filtroCorreo,
 }: {
   edits: Record<string, string>;
   gruposExtra?: GrupoExtra[];
   gruposOcultos?: { hojaId: string; nombre: string }[];
   miembrosExtra?: MiembroExtra[];
   hojasExtra?: HojaExtra[];
+  soloLectura?: boolean;
+  filtroCorreo?: string;
 }) {
   const todasHojas = useMemo(
     () => [
@@ -936,7 +1003,27 @@ export function ListaCorreos({
     [hojasExtra],
   );
 
-  const [hojaActiva, setHojaActiva] = useState(data.hojas[0]?.id);
+  const hojasVisibles = useMemo(() => {
+    if (!filtroCorreo) return todasHojas;
+    return todasHojas.filter((h) => {
+      const hData = data.hojas.find((d) => d.id === h.id);
+      if (hData) {
+        return (
+          hData.grupos.some((g) => g.asesores.some((a) => a.correo === filtroCorreo)) ||
+          miembrosExtra.some((m) => m.hojaId === h.id && m.correo === filtroCorreo)
+        );
+      }
+      return miembrosExtra.some((m) => m.hojaId === h.id && m.correo === filtroCorreo);
+    });
+  }, [todasHojas, filtroCorreo, miembrosExtra]);
+
+  const [hojaActiva, setHojaActiva] = useState(() => {
+    if (!filtroCorreo) return data.hojas[0]?.id;
+    for (const h of data.hojas) {
+      if (h.grupos.some((g) => g.asesores.some((a) => a.correo === filtroCorreo))) return h.id;
+    }
+    return data.hojas[0]?.id;
+  });
   const [creandoMBP, setCreandoMBP] = useState(false);
   const [transfiriendo, setTransfiriendo] = useState<TransferirDatos | null>(null);
   const [errorTransferir, setErrorTransferir] = useState<string | null>(null);
@@ -999,9 +1086,12 @@ export function ListaCorreos({
         }));
       return extras.length > 0 ? { ...g, asesores: [...g.asesores, ...extras] } : g;
     });
+    const porFiltro = filtroCorreo
+      ? todos.filter((g) => g.asesores.some((a) => a.correo === filtroCorreo))
+      : todos;
     const q = busqueda.trim().toLowerCase();
-    if (!q) return todos;
-    return todos
+    if (!q) return porFiltro;
+    return porFiltro
       .map((g) => ({
         ...g,
         asesores: g.asesores.filter(
@@ -1009,7 +1099,7 @@ export function ListaCorreos({
         ),
       }))
       .filter((g) => g.asesores.length > 0);
-  }, [hoja, gruposDinamicos, ocultoSet, busqueda, miembrosExtra]);
+  }, [hoja, gruposDinamicos, ocultoSet, busqueda, miembrosExtra, filtroCorreo]);
 
   const columnas = useMemo(() => {
     const all = grupos.flatMap((g) => g.asesores);
@@ -1170,27 +1260,29 @@ export function ListaCorreos({
             {totalGeneral} correos en {data.hojas.length} hojas · actualizado{' '}
             {formatFecha(data.actualizado)}
           </p>
-          <button
-            type="button"
-            onClick={() => setCreandoMBP(true)}
-            className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground hover:bg-muted"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {!soloLectura && (
+            <button
+              type="button"
+              onClick={() => setCreandoMBP(true)}
+              className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground hover:bg-muted"
             >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Nuevo MBP
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Nuevo MBP
+            </button>
+          )}
         </div>
         <input
           type="search"
@@ -1203,7 +1295,7 @@ export function ListaCorreos({
 
       {/* Tabs por hoja */}
       <div className="flex flex-wrap gap-1 border-b border-border">
-        {todasHojas.map((h) => (
+        {hojasVisibles.map((h) => (
           <button
             key={h.id}
             type="button"
@@ -1225,36 +1317,38 @@ export function ListaCorreos({
           {hoja.nombre} · {totalHoja} correos · {grupos.length} BP
           {grupos.length !== 1 ? 's' : ''}
         </p>
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setCreandoEquipo(true)}
-            className="flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground hover:bg-muted"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="11"
-              height="11"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        {!soloLectura && (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setCreandoEquipo(true)}
+              className="flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground hover:bg-muted"
             >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Nuevo BP
-          </button>
-          <button
-            type="button"
-            onClick={() => setMostrandoEliminarBP(true)}
-            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground hover:bg-muted"
-          >
-            Eliminar BP
-          </button>
-        </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Nuevo BP
+            </button>
+            <button
+              type="button"
+              onClick={() => setMostrandoEliminarBP(true)}
+              className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground hover:bg-muted"
+            >
+              Eliminar BP
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -1274,6 +1368,7 @@ export function ListaCorreos({
               onEditMetrica={(label, valor) => handleEditMetrica(g.nombre, label, valor)}
               onEliminar={handleSolicitarEliminar}
               onTransferir={setTransfiriendo}
+              soloLectura={soloLectura}
             />
           ))
         )}
