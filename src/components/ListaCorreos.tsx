@@ -451,6 +451,19 @@ function FilaAsesor({
         </td>
       )}
 
+      {/* Comentario */}
+      <td className="px-3 py-2">
+        {soloLectura ? (
+          <span className="text-xs text-muted-foreground">{val('comentario') || ''}</span>
+        ) : (
+          <CeldaTexto
+            valor={val('comentario')}
+            onSave={(v) => onEdit('comentario', v)}
+            className="text-xs text-muted-foreground"
+          />
+        )}
+      </td>
+
       {/* Acciones */}
       {!soloLectura && (
         <td className="px-1 py-2 text-center">
@@ -691,10 +704,11 @@ function TablaGrupo({
                 <th className="w-[95px] px-3 py-2 font-semibold text-foreground">Salesforce</th>
               )}
               {columnas.fecha && (
-                <th className="w-[104px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
+                <th className="w-[86px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
                   Fecha baja
                 </th>
               )}
+              <th className="px-3 py-2 font-semibold text-foreground">Comentario</th>
               {!soloLectura && <th className="w-16" />}
             </tr>
           </thead>
