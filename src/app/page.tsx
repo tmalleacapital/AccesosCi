@@ -138,6 +138,7 @@ export default async function Home({
                         miembrosExtra={miembrosExtra}
                         hojasExtra={hojasExtra}
                         soloLectura={esBP}
+                        esAdmin={sesion.rol === 'admin'}
                         filtroGrupo={filtroGrupo}
                       />
                     ),

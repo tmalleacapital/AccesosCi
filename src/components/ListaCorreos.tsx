@@ -290,6 +290,7 @@ function FilaAsesor({
   onEliminar,
   onTransferir,
   soloLectura = false,
+  esAdmin = false,
 }: {
   asesor: Asesor;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
@@ -298,6 +299,7 @@ function FilaAsesor({
   onEliminar: () => void;
   onTransferir: (datos: TransferirDatos) => void;
   soloLectura?: boolean;
+  esAdmin?: boolean;
 }) {
   const orig = asesor.correo;
 
@@ -452,18 +454,16 @@ function FilaAsesor({
         </td>
       )}
 
-      {/* Comentario */}
-      <td className="px-3 py-2">
-        {soloLectura ? (
-          <span className="text-xs text-muted-foreground">{val('comentario') || ''}</span>
-        ) : (
+      {/* Comentario — solo admin */}
+      {esAdmin && (
+        <td className="px-3 py-2">
           <CeldaTexto
             valor={val('comentario')}
             onSave={(v) => onEdit('comentario', v)}
             className="text-xs text-muted-foreground"
           />
-        )}
-      </td>
+        </td>
+      )}
 
       {/* Acciones */}
       {!soloLectura && (
@@ -553,7 +553,10 @@ function calcularMetricasDinamicas(
   const portalActivo = asesores.filter((a) => a.sf === 'Portal' && a.estado === 'activo').length;
   const salesCloud = asesores.filter((a) => a.sf === 'Cloud' && a.estado === 'activo').length;
 
-  // Baseline editable para Portal Creadas; si no hay override usa el del JSON (o portalActivo)
+  const rawPortalActivo = edits[metricaKey(grupo.nombre, 'Cuentas Portal Activo')];
+  const portalActivoFinal =
+    rawPortalActivo !== undefined ? parseInt(rawPortalActivo, 10) : portalActivo;
+
   const jsonBaseline =
     grupo.metricas.find((m) => m.label === 'Cuentas Portal Creadas')?.valor ?? portalActivo;
   const rawBaseline = edits[metricaKey(grupo.nombre, 'Cuentas Portal Creadas')];
@@ -562,10 +565,13 @@ function calcularMetricasDinamicas(
       ? Math.max(parseInt(rawBaseline, 10), portalActivo)
       : Math.max(jsonBaseline, portalActivo);
 
+  const rawSalesCloud = edits[metricaKey(grupo.nombre, 'Cuentas SalesCloud')];
+  const salesCloudFinal = rawSalesCloud !== undefined ? parseInt(rawSalesCloud, 10) : salesCloud;
+
   return [
-    { label: 'Cuentas Portal Activo', valor: portalActivo },
+    { label: 'Cuentas Portal Activo', valor: portalActivoFinal },
     { label: 'Cuentas Portal Creadas', valor: portalCreadas },
-    { label: 'Cuentas SalesCloud', valor: salesCloud },
+    { label: 'Cuentas SalesCloud', valor: salesCloudFinal },
   ];
 }
 
@@ -639,6 +645,7 @@ function TablaGrupo({
   onEliminar,
   onTransferir,
   soloLectura = false,
+  esAdmin = false,
 }: {
   grupo: Grupo;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
@@ -649,6 +656,7 @@ function TablaGrupo({
   onEliminar: (correo: string, nombre: string) => void;
   onTransferir: (datos: TransferirDatos) => void;
   soloLectura?: boolean;
+  esAdmin?: boolean;
 }) {
   const metricas = useMemo(
     () => calcularMetricasDinamicas(grupo, edits, eliminadas),
@@ -670,7 +678,7 @@ function TablaGrupo({
           {asesoresVisibles.length}
         </span>
         {metricas.map((m) =>
-          m.label === 'Cuentas Portal Creadas' && !soloLectura ? (
+          !soloLectura ? (
             <BadgeNumeroEditable
               key={m.label}
               label={m.label}
@@ -709,7 +717,7 @@ function TablaGrupo({
                   Fecha baja
                 </th>
               )}
-              <th className="px-3 py-2 font-semibold text-foreground">Comentario</th>
+              {esAdmin && <th className="px-3 py-2 font-semibold text-foreground">Comentario</th>}
               {!soloLectura && <th className="w-16" />}
             </tr>
           </thead>
@@ -726,6 +734,7 @@ function TablaGrupo({
                 }
                 onTransferir={onTransferir}
                 soloLectura={soloLectura}
+                esAdmin={esAdmin}
               />
             ))}
           </tbody>
@@ -1000,6 +1009,7 @@ export function ListaCorreos({
   miembrosExtra = [],
   hojasExtra = [],
   soloLectura = false,
+  esAdmin = false,
   filtroGrupo,
 }: {
   edits: Record<string, string>;
@@ -1008,6 +1018,7 @@ export function ListaCorreos({
   miembrosExtra?: MiembroExtra[];
   hojasExtra?: HojaExtra[];
   soloLectura?: boolean;
+  esAdmin?: boolean;
   filtroGrupo?: { hojaId: string; grupoNombre: string };
 }) {
   const todasHojas = useMemo(
@@ -1372,6 +1383,7 @@ export function ListaCorreos({
               onEliminar={handleSolicitarEliminar}
               onTransferir={setTransfiriendo}
               soloLectura={soloLectura}
+              esAdmin={esAdmin}
             />
           ))
         )}
