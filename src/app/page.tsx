@@ -66,7 +66,7 @@ export default async function Home({
     <div className="flex flex-1 flex-col bg-background">
       <AutoRefresh />
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
             <h1 className="text-lg font-semibold text-foreground">Solicitudes de Accesos</h1>
             <p className="text-xs text-muted-foreground">
@@ -91,7 +91,7 @@ export default async function Home({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 space-y-8 px-6 py-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-6 py-8">
         {creada && (
           <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
             Solicitud enviada. Se notificó a accesos@capitalinteligente.cl.
