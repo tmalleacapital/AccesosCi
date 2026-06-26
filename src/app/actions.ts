@@ -53,7 +53,7 @@ export async function solicitarCodigoAction(_prev: unknown, formData: FormData) 
   const usuarios = await leerUsuarios();
   const usuario = usuarios.find((u) => u.email.toLowerCase() === email);
   const rol = usuario?.rol ?? 'solicitante';
-  if (rol !== 'bp' && rol !== 'admin') {
+  if (rol !== 'bp' && rol !== 'admin' && rol !== 'finanzas') {
     return { error: 'No tienes acceso a esta plataforma.' };
   }
 
@@ -89,7 +89,7 @@ export async function verificarCodigoAction(_prev: unknown, formData: FormData) 
   const rol = usuario?.rol ?? 'solicitante';
   const grupoBp = usuario?.grupoBp;
 
-  if (rol !== 'bp' && rol !== 'admin') {
+  if (rol !== 'bp' && rol !== 'admin' && rol !== 'finanzas') {
     return { error: 'No tienes acceso a esta plataforma.', email };
   }
 

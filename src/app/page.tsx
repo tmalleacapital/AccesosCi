@@ -30,6 +30,7 @@ export default async function Home({
   const { creada } = await searchParams;
   const esEquipo = sesion.rol === 'equipo' || sesion.rol === 'admin';
   const esBP = sesion.rol === 'bp';
+  const esFinanzas = sesion.rol === 'finanzas';
 
   const filtroGrupo = (() => {
     if (!esBP || !sesion.grupoBp) return undefined;
@@ -49,18 +50,26 @@ export default async function Home({
   ] = await Promise.all([
     leerPlataformas(),
     leerSolicitudes(),
-    esEquipo || esBP ? leerEdicionesCorreos() : Promise.resolve({}),
+    esEquipo || esBP || esFinanzas ? leerEdicionesCorreos() : Promise.resolve({}),
     sesion.rol === 'admin' ? leerGruposExtra() : Promise.resolve([]),
     sesion.rol === 'admin' ? leerGruposOcultos() : Promise.resolve([]),
-    esEquipo || esBP ? leerMiembrosExtra() : Promise.resolve([]),
+    esEquipo || esBP || esFinanzas ? leerMiembrosExtra() : Promise.resolve([]),
     sesion.rol === 'admin' ? leerHojasExtra() : Promise.resolve([]),
   ]);
 
-  const countEliminados = Object.entries(edicionesCorreos).filter(
-    ([k, v]) => k.endsWith('||eliminado') && v === 'true',
-  ).length;
   const plataformasActivas = plataformas.filter((p) => p.activa);
   const solicitudes = esEquipo ? todas : todas.filter((s) => s.solicitanteEmail === sesion.email);
+
+  const labelRol =
+    sesion.rol === 'admin'
+      ? 'Administrador'
+      : sesion.rol === 'equipo'
+        ? 'Equipo de Accesos'
+        : sesion.rol === 'bp'
+          ? 'Business Partner'
+          : sesion.rol === 'finanzas'
+            ? 'Finanzas'
+            : 'Solicitante';
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -70,14 +79,7 @@ export default async function Home({
           <div>
             <h1 className="text-lg font-semibold text-foreground">Solicitudes de Accesos</h1>
             <p className="text-xs text-muted-foreground">
-              {sesion.nombre} ·{' '}
-              {sesion.rol === 'admin'
-                ? 'Administrador'
-                : sesion.rol === 'equipo'
-                  ? 'Equipo de Accesos'
-                  : sesion.rol === 'bp'
-                    ? 'Business Partner'
-                    : 'Solicitante'}
+              {sesion.nombre} · {labelRol}
             </p>
           </div>
           <form action={logoutAction}>
@@ -125,7 +127,7 @@ export default async function Home({
                 />
               ),
             },
-            ...(sesion.rol === 'admin' || esBP
+            ...(sesion.rol === 'admin' || esBP || esFinanzas
               ? [
                   {
                     id: 'correos',
@@ -137,7 +139,7 @@ export default async function Home({
                         gruposOcultos={gruposOcultos}
                         miembrosExtra={miembrosExtra}
                         hojasExtra={hojasExtra}
-                        soloLectura={esBP}
+                        soloLectura={esBP || esFinanzas}
                         esAdmin={sesion.rol === 'admin'}
                         filtroGrupo={filtroGrupo}
                       />
@@ -145,7 +147,7 @@ export default async function Home({
                   },
                 ]
               : []),
-            ...(esEquipo
+            ...(esEquipo || esFinanzas
               ? [
                   {
                     id: 'eliminados',
