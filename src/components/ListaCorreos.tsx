@@ -24,6 +24,7 @@ interface Asesor {
   sf: string;
   tl: boolean;
   fechaEliminacion?: string;
+  comentario?: string;
   esDinamico?: boolean;
 }
 
