@@ -74,24 +74,37 @@ function metricaKey(grupoNombre: string, label: string) {
 
 // ─── Exportación XLSX (vía API route — exceljs corre en servidor) ────────────
 
+function filtrarEdits(correos: string[], edits: Record<string, string>): Record<string, string> {
+  const set = new Set(correos);
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(edits)) {
+    const correo = k.split('||')[0];
+    if (set.has(correo)) out[k] = v;
+  }
+  return out;
+}
+
 async function exportarGrupoXlsx(
   grupo: Grupo,
   edits: Record<string, string>,
   eliminadas: Set<string>,
 ) {
+  const editsFiltrados = filtrarEdits(grupo.asesores.map((a) => a.correo), edits);
+
   const res = await fetch('/api/export-xlsx', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       grupoNombre: grupo.nombre,
       asesores: grupo.asesores,
-      edits,
+      edits: editsFiltrados,
       eliminadas: [...eliminadas],
     }),
   });
 
   if (!res.ok) {
-    alert('Error al generar el archivo. Intenta de nuevo.');
+    const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    alert(`Error al generar el archivo: ${errBody.error ?? res.status}`);
     return;
   }
 
@@ -140,19 +153,23 @@ async function exportarHojaXlsx(
     },
   );
 
+  const todosCorreos = todosGrupos.flatMap((g) => g.asesores.map((a) => a.correo));
+  const editsFiltrados = filtrarEdits(todosCorreos, edits);
+
   const res = await fetch('/api/export-mbp', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       hojaLabel: etiqueta,
       grupos: todosGrupos.map((g) => ({ grupoNombre: g.nombre, asesores: g.asesores })),
-      edits,
+      edits: editsFiltrados,
       eliminadas: [...eliminadas],
     }),
   });
 
   if (!res.ok) {
-    alert('Error al generar el archivo. Intenta de nuevo.');
+    const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    alert(`Error al generar el archivo: ${errBody.error ?? res.status}`);
     return;
   }
 

@@ -41,6 +41,7 @@ function makeBorder(color = BORDE): any {
 }
 
 export async function POST(req: NextRequest) {
+  try {
   const { grupoNombre, asesores, edits, eliminadas: eliminadasArr } = await req.json();
   const eliminadas = new Set<string>(eliminadasArr ?? []);
 
@@ -171,4 +172,9 @@ export async function POST(req: NextRequest) {
       'Content-Disposition': `attachment; filename="${encodeURIComponent(grupoNombre)}.xlsx"`,
     },
   });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[export-xlsx]', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
