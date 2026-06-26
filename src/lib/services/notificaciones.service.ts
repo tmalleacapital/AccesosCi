@@ -146,12 +146,21 @@ export function construirCorreoCompletada(
     timeStyle: 'short',
   });
 
+  const etiquetaPlataforma =
+    solicitud.tipo === 'baja'
+      ? { icono: '🚫', texto: 'Acceso dado de baja', color: '#991b1b' }
+      : solicitud.tipo === 'modificar'
+        ? { icono: '🔄', texto: 'Acceso modificado', color: '#92400e' }
+        : { icono: '✅', texto: 'Credenciales enviadas al correo', color: '#166534' };
+
   const filasPlataformas = solicitud.accesos
     .map(
       (a) =>
         `<tr>
           <td style="padding:6px 12px;color:#111;white-space:nowrap">· ${nombrePlataforma(a.plataformaId, plataformas)}</td>
-          <td style="padding:6px 12px;color:#166534;font-size:0.82rem">✅ Credenciales enviadas al correo</td>
+          <td style="padding:6px 12px;font-size:0.82rem;color:${etiquetaPlataforma.color}">
+            ${etiquetaPlataforma.icono} ${etiquetaPlataforma.texto}
+          </td>
         </tr>`,
     )
     .join('');
