@@ -91,6 +91,67 @@ async function exportarGrupoXlsx(
   URL.revokeObjectURL(url);
 }
 
+async function exportarHojaXlsx(
+  hoja: { id: string; nombre: string; grupos: Grupo[] },
+  gruposExtra: GrupoExtra[],
+  gruposOcultos: { hojaId: string; nombre: string }[],
+  miembrosExtra: MiembroExtra[],
+  edits: Record<string, string>,
+  eliminadas: Set<string>,
+  etiqueta: string,
+) {
+  const ocultos = new Set(
+    gruposOcultos.filter((g) => g.hojaId === hoja.id).map((g) => g.nombre),
+  );
+
+  const gruposDin = gruposExtra
+    .filter((g) => g.hojaId === hoja.id)
+    .map((g) => ({ nombre: g.nombre, asesores: [] as Grupo['asesores'] }));
+
+  const todosGrupos = [...hoja.grupos.filter((g) => !ocultos.has(g.nombre)), ...gruposDin].map(
+    (g) => {
+      const extras = miembrosExtra
+        .filter((m) => m.hojaId === hoja.id && m.grupoNombre === g.nombre)
+        .map((m) => ({
+          nombre: m.nombre,
+          correo: m.correo,
+          estado: m.estado,
+          jira: m.jira,
+          slack: m.slack,
+          sf: m.sf,
+          tl: false as boolean,
+          fechaEliminacion: undefined as string | undefined,
+          esDinamico: true,
+        }));
+      return extras.length > 0 ? { ...g, asesores: [...g.asesores, ...extras] } : g;
+    },
+  );
+
+  const res = await fetch('/api/export-mbp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      hojaLabel: etiqueta,
+      grupos: todosGrupos.map((g) => ({ grupoNombre: g.nombre, asesores: g.asesores })),
+      edits,
+      eliminadas: [...eliminadas],
+    }),
+  });
+
+  if (!res.ok) {
+    alert('Error al generar el archivo. Intenta de nuevo.');
+    return;
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${etiqueta}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ─── Celda editable (texto / select) ────────────────────────────────────────
 
 function CeldaTexto({
@@ -1352,21 +1413,46 @@ export function ListaCorreos({
 
       {/* Tabs por hoja */}
       <div className="flex flex-wrap gap-1 border-b border-border">
-        {hojasVisibles.map((h) => (
-          <button
-            key={h.id}
-            type="button"
-            onClick={() => setHojaActiva(h.id)}
-            className={cn(
-              'border-b-2 px-3 py-1.5 text-sm font-medium transition-colors',
-              hojaActiva === h.id
-                ? 'border-primary text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {etiquetaHoja(h.nombre)}
-          </button>
-        ))}
+        {hojasVisibles.map((h) => {
+          const etiqueta = etiquetaHoja(h.nombre);
+          return (
+            <div key={h.id} className="group flex items-end">
+              <button
+                type="button"
+                onClick={() => setHojaActiva(h.id)}
+                className={cn(
+                  'border-b-2 px-3 py-1.5 text-sm font-medium transition-colors',
+                  hojaActiva === h.id
+                    ? 'border-primary text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {etiqueta}
+              </button>
+              <button
+                type="button"
+                title={`Exportar ${etiqueta}`}
+                onClick={() =>
+                  exportarHojaXlsx(
+                    h,
+                    gruposExtra,
+                    gruposOcultos,
+                    miembrosExtra,
+                    edits,
+                    eliminadas,
+                    etiqueta,
+                  )
+                }
+                className="mb-1.5 flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                XLSX
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       <div className="flex items-center justify-between gap-2">
