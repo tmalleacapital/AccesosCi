@@ -53,12 +53,16 @@ function formatFecha(raw: string): string {
 
 function formatFechaChile(iso: string): string {
   try {
-    return new Intl.DateTimeFormat('es-CL', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
+    const d = new Date(iso);
+    const fecha = new Intl.DateTimeFormat('es-CL', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
       timeZone: 'America/Santiago',
-    }).format(new Date(iso));
+    }).format(d);
+    const hora = new Intl.DateTimeFormat('es-CL', {
+      hour: '2-digit', minute: '2-digit', hour12: false,
+      timeZone: 'America/Santiago',
+    }).format(d);
+    return `${fecha} ${hora}`;
   } catch {
     return formatFecha(iso);
   }
