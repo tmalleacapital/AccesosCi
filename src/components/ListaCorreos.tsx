@@ -62,11 +62,11 @@ function metricaKey(grupoNombre: string, label: string) {
 // ─── Exportación XLSX ────────────────────────────────────────────────────────
 
 const PRECIOS = {
-  google: 7.0,
-  jira: 7.91,
-  slack: 7.25,
-  sfCloud: 175.0,
-  sfPortal: 25.0,
+  google: 12.5,
+  jira: 10.0,
+  slack: 7.02,
+  sfCloud: 46.14,
+  sfPortal: 5.0,
 };
 
 const AZUL    = 'FF1B3A5C';
