@@ -212,7 +212,18 @@ function FilaUsuario({
   onCambiarGrupo: (email: string, hojaId: string, grupoNombre: string) => void;
   onEliminar: (email: string) => void;
 }) {
-  const [hojaId, grupoNombre] = (usuario.grupoBp ?? '').split('|');
+  const [hojaInicial, grupoInicial] = (usuario.grupoBp ?? '').split('|');
+  const [hojaId, setHojaId] = useState(hojaInicial ?? '');
+  const [grupoNombre, setGrupoNombre] = useState(grupoInicial ?? '');
+
+  function handleSelectorChange(h: string, g: string) {
+    setHojaId(h);
+    setGrupoNombre(g);
+    // Solo guardamos cuando hay selección completa (MBP + grupo) o cuando se limpia el MBP.
+    if ((h && g) || !h) {
+      onCambiarGrupo(usuario.email, h, g);
+    }
+  }
 
   return (
     <tr className="border-b border-border last:border-0 hover:bg-muted/20">
@@ -236,10 +247,10 @@ function FilaUsuario({
       <td className="px-3 py-2">
         {usuario.rol === 'bp' ? (
           <SelectorGrupoBp
-            hojaId={hojaId ?? ''}
-            grupoNombre={grupoNombre ?? ''}
+            hojaId={hojaId}
+            grupoNombre={grupoNombre}
             hojas={hojas}
-            onChange={(h, g) => onCambiarGrupo(usuario.email, h, g)}
+            onChange={handleSelectorChange}
           />
         ) : (
           <span className="text-xs text-muted-foreground">—</span>
