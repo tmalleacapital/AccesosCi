@@ -171,7 +171,7 @@ export function CompletarCreacionForm({
 
         <BotonSubmit
           label={nextEstado === 'completada' ? 'Completar' : 'Completar paso 1 (correo)'}
-          className="self-end rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 dark:hover:bg-emerald-900"
+          className="self-end rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-40 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 dark:hover:bg-emerald-900"
         />
       </div>
     </form>

@@ -15,6 +15,7 @@ import {
 } from '@/app/actions';
 import type { GrupoExtra, HojaExtra, MiembroExtra } from '@/lib/db';
 import { PRECIOS } from '@/lib/precios';
+import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY } from '@/lib/buttonStyles';
 
 interface Asesor {
   nombre: string;
@@ -367,18 +368,10 @@ function ConfirmModal({
           </p>
         </div>
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancelar}
-            className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-muted"
-          >
+          <button type="button" onClick={onCancelar} className={BTN_SECONDARY}>
             Cancelar
           </button>
-          <button
-            type="button"
-            onClick={onConfirmar}
-            className="rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700"
-          >
+          <button type="button" onClick={onConfirmar} className={BTN_DANGER}>
             Sí, eliminar
           </button>
         </div>
@@ -959,7 +952,7 @@ function TablaGrupo({
               setExportando(false);
             }
           }}
-          className="ml-auto flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+          className="ml-auto flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
         >
           {exportando ? (
             <Spinner />
@@ -1087,11 +1080,7 @@ function ModalEliminarBP({
         )}
 
         <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onCerrar}
-            className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-muted"
-          >
+          <button type="button" onClick={onCerrar} className={BTN_SECONDARY}>
             Cerrar
           </button>
         </div>
@@ -1155,21 +1144,16 @@ function ModalNuevoEquipo({
             onKeyDown={(e) => e.key === 'Escape' && !pending && onCancelar()}
             placeholder={placeholder}
             disabled={pending}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
           />
           <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onCancelar}
-              disabled={pending}
-              className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-muted disabled:opacity-40"
-            >
+            <button type="button" onClick={onCancelar} disabled={pending} className={BTN_SECONDARY}>
               Cancelar
             </button>
             <button
               type="submit"
               disabled={!nombre.trim() || pending}
-              className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
+              className={cn(BTN_PRIMARY, 'flex items-center gap-1.5')}
             >
               {pending && <Spinner />}
               {pending ? 'Creando…' : 'Crear'}
@@ -1266,12 +1250,7 @@ function ModalTransferirBP({
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border pt-3">
-          <button
-            type="button"
-            onClick={onCancelar}
-            disabled={pending}
-            className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-muted disabled:opacity-40"
-          >
+          <button type="button" onClick={onCancelar} disabled={pending} className={BTN_SECONDARY}>
             Cancelar
           </button>
           <button
@@ -1280,7 +1259,7 @@ function ModalTransferirBP({
             onClick={() =>
               seleccionado && onTransferir(seleccionado.hojaId, seleccionado.grupoNombre)
             }
-            className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
+            className={cn(BTN_PRIMARY, 'flex items-center gap-1.5')}
           >
             {pending && <Spinner />}
             {pending ? 'Transfiriendo…' : 'Transferir'}
@@ -1642,7 +1621,7 @@ export function ListaCorreos({
                   }
                 }}
                 className={cn(
-                  'mb-1.5 flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-xs text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground disabled:opacity-50',
+                  'mb-1.5 flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-xs text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground disabled:opacity-40',
                   exportandoHojaId === h.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
                 )}
               >
@@ -1805,7 +1784,7 @@ export function ListaCorreos({
                   type="button"
                   onClick={() => setConfirmandoEliminarGrupo(null)}
                   disabled={eliminarGrupoPending}
-                  className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-muted disabled:opacity-40"
+                  className={BTN_SECONDARY}
                 >
                   Cancelar
                 </button>
@@ -1813,7 +1792,7 @@ export function ListaCorreos({
                   type="button"
                   onClick={handleConfirmarEliminarGrupo}
                   disabled={eliminarGrupoPending}
-                  className="flex items-center gap-1.5 rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-40"
+                  className={cn(BTN_DANGER, 'flex items-center gap-1.5')}
                 >
                   {eliminarGrupoPending && <Spinner />}
                   {eliminarGrupoPending ? 'Eliminando…' : 'Sí, eliminar'}

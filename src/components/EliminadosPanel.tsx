@@ -173,7 +173,7 @@ export function EliminadosPanel({
                       type="button"
                       disabled={restaurando === e.correo}
                       onClick={() => handleRestaurar(e.correo)}
-                      className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-muted disabled:opacity-50"
+                      className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-muted disabled:opacity-40"
                     >
                       {restaurando === e.correo && (
                         <svg

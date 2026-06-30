@@ -9,6 +9,8 @@ import {
 } from '@/app/actions';
 import type { Rol, Usuario } from '@/types';
 import type { GrupoExtra, HojaExtra } from '@/lib/db';
+import { cn } from '@/lib/utils';
+import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY } from '@/lib/buttonStyles';
 
 interface Hoja {
   id: string;
@@ -176,17 +178,13 @@ function ModalNuevoUsuario({
           )}
           {error && <p className="text-xs text-rose-500">{error}</p>}
           <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onCerrar}
-              className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-muted"
-            >
+            <button type="button" onClick={onCerrar} className={BTN_SECONDARY}>
               Cancelar
             </button>
             <button
               type="submit"
               disabled={!nombre.trim() || !email.trim() || isPending}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
+              className={BTN_PRIMARY}
             >
               {isPending ? 'Creando…' : 'Crear'}
             </button>
@@ -258,7 +256,7 @@ function FilaUsuario({
           value={usuario.rol}
           disabled={pending}
           onChange={(e) => onCambiarRol(usuario.email, e.target.value as Rol)}
-          className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50"
+          className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
         >
           {ROLES.map((r) => (
             <option key={r.value} value={r.value}>
@@ -287,7 +285,7 @@ function FilaUsuario({
           disabled={esYo || pending}
           title={esYo ? 'No puedes eliminar tu propia cuenta' : 'Eliminar usuario'}
           onClick={() => onEliminar(usuario.email)}
-          className="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
+          className="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
         >
           Eliminar
         </button>
@@ -418,7 +416,7 @@ export function AdminUsuarios({
                 type="button"
                 onClick={() => setConfirmandoEliminar(null)}
                 disabled={eliminarPending}
-                className="rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-muted disabled:opacity-40"
+                className={BTN_SECONDARY}
               >
                 Cancelar
               </button>
@@ -426,7 +424,7 @@ export function AdminUsuarios({
                 type="button"
                 onClick={handleEliminar}
                 disabled={eliminarPending}
-                className="flex items-center gap-1.5 rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-40"
+                className={cn(BTN_DANGER, 'flex items-center gap-1.5')}
               >
                 {eliminarPending && <Spinner />}
                 {eliminarPending ? 'Eliminando…' : 'Eliminar'}

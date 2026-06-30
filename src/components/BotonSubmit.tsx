@@ -11,7 +11,7 @@ export function BotonSubmit({ label, className }: { label: string; className?: s
       disabled={pending}
       className={
         className ??
-        'rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-60'
+        'rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40'
       }
     >
       {pending ? (

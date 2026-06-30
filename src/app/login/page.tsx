@@ -2,6 +2,8 @@
 
 import { useActionState, useEffect, useState } from 'react';
 import { solicitarCodigoAction, verificarCodigoAction } from '@/app/actions';
+import { cn } from '@/lib/utils';
+import { BTN_PRIMARY } from '@/lib/buttonStyles';
 
 const initialStep1 = {} as { error?: string; emailEnviado?: string };
 const initialStep2 = {} as { error?: string; email?: string };
@@ -69,11 +71,7 @@ export default function LoginPage() {
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={step1Pending}
-              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-            >
+            <button type="submit" disabled={step1Pending} className={cn(BTN_PRIMARY, 'w-full')}>
               {step1Pending ? 'Enviando código…' : 'Enviar código de acceso'}
             </button>
           </form>
@@ -123,11 +121,7 @@ export default function LoginPage() {
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={step2Pending}
-              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-            >
+            <button type="submit" disabled={step2Pending} className={cn(BTN_PRIMARY, 'w-full')}>
               {step2Pending ? 'Verificando…' : 'Ingresar'}
             </button>
 
@@ -136,7 +130,7 @@ export default function LoginPage() {
               formAction={step1Action}
               formNoValidate
               disabled={step1Pending || cooldown > 0}
-              className="w-full text-center text-sm text-muted-foreground hover:text-foreground disabled:opacity-60"
+              className="w-full text-center text-sm text-muted-foreground hover:text-foreground disabled:opacity-40"
             >
               {step1Pending
                 ? 'Reenviando código…'
