@@ -49,7 +49,8 @@ function etiquetaHoja(nombre: string): string {
 }
 
 function formatFecha(raw: string): string {
-  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!raw || raw === '—') return '—';
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
   return m ? `${m[3]}-${m[2]}-${m[1]}` : raw;
 }
 
@@ -270,6 +271,70 @@ function CeldaTexto({
         if (e.key === 'Escape') setEditando(false);
       }}
       className="w-full rounded border border-primary bg-background px-1 py-0.5 text-sm text-foreground outline-none ring-1 ring-primary/50"
+    />
+  );
+}
+
+function toIsoDate(raw: string): string {
+  if (!raw || raw === '—') return '';
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dmy = raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+  return '';
+}
+
+function CeldaFecha({
+  valor,
+  onSave,
+  className,
+}: {
+  valor: string;
+  onSave: (v: string) => void;
+  className?: string;
+}) {
+  const [editando, setEditando] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+  const isoActual = toIsoDate(valor);
+
+  function iniciar() {
+    setEditando(true);
+    setTimeout(() => ref.current?.showPicker?.(), 0);
+  }
+
+  function guardar(nuevoIso: string) {
+    setEditando(false);
+    if (nuevoIso !== isoActual) onSave(nuevoIso);
+  }
+
+  if (!editando) {
+    return (
+      <span
+        role="button"
+        tabIndex={0}
+        title="Clic para editar"
+        onClick={iniciar}
+        onKeyDown={(e) => e.key === 'Enter' && iniciar()}
+        className={cn(
+          'cursor-pointer rounded px-0.5 hover:bg-muted/60 hover:underline hover:decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+          className,
+        )}
+      >
+        {formatFecha(valor) === '—' ? <em className="text-muted-foreground/50">—</em> : formatFecha(valor)}
+      </span>
+    );
+  }
+
+  return (
+    <input
+      ref={ref}
+      type="date"
+      defaultValue={isoActual}
+      autoFocus
+      onBlur={(e) => guardar(e.target.value)}
+      onChange={(e) => guardar(e.target.value)}
+      onKeyDown={(e) => e.key === 'Escape' && setEditando(false)}
+      className="w-full rounded border border-primary bg-background px-1 py-0.5 text-xs text-foreground outline-none ring-1 ring-primary/50"
     />
   );
 }
@@ -596,8 +661,8 @@ function FilaAsesor({
           {soloLectura ? (
             <span className="text-xs text-muted-foreground">{formatFecha(fecha)}</span>
           ) : (
-            <CeldaTexto
-              valor={formatFecha(fecha)}
+            <CeldaFecha
+              valor={fecha}
               onSave={(v) => onEdit('fechaEliminacion', v)}
               className="text-xs text-muted-foreground"
             />
@@ -1355,7 +1420,7 @@ export function ListaCorreos({
     [gruposOcultos, hoja.id],
   );
 
-  const grupos = useMemo(() => {
+  const gruposSinBusqueda = useMemo(() => {
     const estaticos = hoja.grupos.filter((g) => !ocultoSet.has(g.nombre));
     const todos = [...estaticos, ...gruposDinamicos].map((g) => {
       const extras = miembrosExtra
@@ -1373,12 +1438,13 @@ export function ListaCorreos({
         }));
       return extras.length > 0 ? { ...g, asesores: [...g.asesores, ...extras] } : g;
     });
-    const porFiltro = filtroGrupo
-      ? todos.filter((g) => g.nombre === filtroGrupo.grupoNombre)
-      : todos;
+    return filtroGrupo ? todos.filter((g) => g.nombre === filtroGrupo.grupoNombre) : todos;
+  }, [hoja, gruposDinamicos, ocultoSet, miembrosExtra, filtroGrupo]);
+
+  const grupos = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
-    if (!q) return porFiltro;
-    return porFiltro
+    if (!q) return gruposSinBusqueda;
+    return gruposSinBusqueda
       .map((g) => ({
         ...g,
         asesores: g.asesores.filter(
@@ -1386,17 +1452,20 @@ export function ListaCorreos({
         ),
       }))
       .filter((g) => g.asesores.length > 0);
-  }, [hoja, gruposDinamicos, ocultoSet, busqueda, miembrosExtra, filtroGrupo]);
+  }, [gruposSinBusqueda, busqueda]);
 
+  // Las columnas opcionales se calculan sobre el grupo completo (sin filtro de
+  // búsqueda) para que no desaparezcan al buscar un correo que aún no tiene
+  // ese campo asignado (ej. Fecha baja).
   const columnas = useMemo(() => {
-    const all = grupos.flatMap((g) => g.asesores);
+    const all = gruposSinBusqueda.flatMap((g) => g.asesores);
     return {
       jira: all.some((a) => a.jira),
       slack: all.some((a) => a.slack),
       sf: all.some((a) => !!a.sf),
       fecha: all.some((a) => !!a.fechaEliminacion),
     };
-  }, [grupos]);
+  }, [gruposSinBusqueda]);
 
   const totalHoja =
     hoja.grupos.reduce((n, g) => n + g.asesores.length, 0) +

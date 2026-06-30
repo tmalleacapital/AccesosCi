@@ -13,14 +13,18 @@ function estKey(correo: string, campo: string) {
   return `${correo}||${campo}`;
 }
 
-function formatFecha(iso: string): string {
-  if (!iso || iso === '—') return '—';
-  try {
-    const d = new Date(iso);
+function formatFecha(raw: string): string {
+  if (!raw || raw === '—') return '—';
+  // ISO YYYY-MM-DD
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}-${iso[2]}-${iso[1]}`;
+  // Ya viene en DD-MM-YYYY (dato guardado en formato de visualización)
+  if (/^\d{2}-\d{2}-\d{4}$/.test(raw)) return raw;
+  const d = new Date(raw);
+  if (!isNaN(d.getTime())) {
     return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
-  } catch {
-    return iso;
   }
+  return '—';
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
