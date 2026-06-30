@@ -1047,7 +1047,7 @@ function TablaGrupo({
                 <th className="w-[95px] px-3 py-2 font-semibold text-foreground">Salesforce</th>
               )}
               {columnas.fecha && (
-                <th className="w-[86px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
+                <th className="w-[130px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
                   Fecha baja
                 </th>
               )}
