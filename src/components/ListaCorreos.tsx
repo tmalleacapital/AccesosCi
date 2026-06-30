@@ -14,6 +14,7 @@ import {
   transferirCorreoAction,
 } from '@/app/actions';
 import type { GrupoExtra, HojaExtra, MiembroExtra } from '@/lib/db';
+import { PRECIOS } from '@/lib/precios';
 
 interface Asesor {
   nombre: string;
@@ -725,6 +726,97 @@ function calcularMetricasDinamicas(
     { label: 'Cuentas Portal Creadas', valor: portalCreadas },
     { label: 'Cuentas SalesCloud', valor: salesCloudFinal },
   ];
+}
+
+// ─── Dashboard de costos (BP) ──────────────────────────────────────────────────
+
+function calcularResumenCostos(grupos: Grupo[], edits: Record<string, string>, eliminadas: Set<string>) {
+  let countGoogle = 0;
+  let countJira = 0;
+  let countSlack = 0;
+  let countSfCloud = 0;
+  let countSfPortal = 0;
+
+  for (const g of grupos) {
+    for (const a of g.asesores) {
+      if (eliminadas.has(a.correo)) continue;
+      if (edits[estKey(a.correo, 'eliminado')] === 'true') continue;
+      if (!a.esDinamico && edits[estKey(a.correo, 'transferido')] === 'true') continue;
+
+      countGoogle++;
+      const jira = (edits[estKey(a.correo, 'jira')] ?? (a.jira ? 'true' : 'false')) === 'true';
+      const slack = (edits[estKey(a.correo, 'slack')] ?? (a.slack ? 'true' : 'false')) === 'true';
+      const sf = (edits[estKey(a.correo, 'sf')] ?? a.sf ?? '').trim();
+      if (jira) countJira++;
+      if (slack) countSlack++;
+      if (sf === 'Cloud') countSfCloud++;
+      if (sf === 'Portal') countSfPortal++;
+    }
+  }
+
+  const plataformas = [
+    { label: 'Google Workspace', count: countGoogle, precio: PRECIOS.google },
+    { label: 'Jira', count: countJira, precio: PRECIOS.jira },
+    { label: 'Slack', count: countSlack, precio: PRECIOS.slack },
+    { label: 'Salesforce Cloud', count: countSfCloud, precio: PRECIOS.sfCloud },
+    { label: 'Salesforce Portal', count: countSfPortal, precio: PRECIOS.sfPortal },
+  ].map((p) => ({ ...p, subtotal: p.count * p.precio }));
+
+  const total = plataformas.reduce((n, p) => n + p.subtotal, 0);
+  return { plataformas, total };
+}
+
+function formatUsd(n: number): string {
+  return n.toLocaleString('es-CL', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+}
+
+function ResumenCostos({
+  grupos,
+  edits,
+  eliminadas,
+}: {
+  grupos: Grupo[];
+  edits: Record<string, string>;
+  eliminadas: Set<string>;
+}) {
+  const { plataformas, total } = useMemo(
+    () => calcularResumenCostos(grupos, edits, eliminadas),
+    [grupos, edits, eliminadas],
+  );
+  const max = Math.max(...plataformas.map((p) => p.subtotal), 1);
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground">Desglose de cobros mensuales</h3>
+        <div className="text-right">
+          <p className="text-xs text-muted-foreground">Total mensual</p>
+          <p className="text-lg font-bold text-foreground">{formatUsd(total)}</p>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {plataformas.map((p) => (
+          <div key={p.label} className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-foreground">
+                {p.label}{' '}
+                <span className="text-muted-foreground">
+                  ({p.count} × {formatUsd(p.precio)})
+                </span>
+              </span>
+              <span className="font-medium text-foreground">{formatUsd(p.subtotal)}</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${p.subtotal === 0 ? 0 : Math.max((p.subtotal / max) * 100, 3)}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ─── Número editable en badge ─────────────────────────────────────────────────
@@ -1500,6 +1592,8 @@ export function ListaCorreos({
           className="w-56 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
       </div>
+
+      {filtroGrupo && <ResumenCostos grupos={grupos} edits={edits} eliminadas={eliminadas} />}
 
       {/* Tabs por hoja */}
       <div className="flex flex-wrap gap-1 border-b border-border">

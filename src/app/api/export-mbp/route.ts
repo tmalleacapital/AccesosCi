@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
-
-const PRECIOS = {
-  google: 12.5,
-  jira: 10.0,
-  slack: 7.02,
-  sfCloud: 46.14,
-  sfPortal: 5.0,
-};
+import { PRECIOS } from '@/lib/precios';
 
 const AZUL     = 'FF1B3A5C';
 const VERDE    = 'FF1A5C38';
