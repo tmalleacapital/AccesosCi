@@ -17,6 +17,7 @@ export function BotonSubmit({ label, className }: { label: string; className?: s
       {pending ? (
         <span className="flex items-center gap-1.5">
           <svg
+            aria-hidden="true"
             className="h-3 w-3 animate-spin"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
