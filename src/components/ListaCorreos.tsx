@@ -284,6 +284,14 @@ function toIsoDate(raw: string): string {
   return '';
 }
 
+/** Inserta los '-' automáticamente mientras se escribe: "16062026" → "16-06-2026". */
+function autoFormatFechaInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
+}
+
 /** Acepta "16-06-2026" o "16/06/2026" y devuelve ISO (YYYY-MM-DD), o null si no es una fecha válida. */
 function parseFechaInput(input: string): string | null {
   const m = input.trim().match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
@@ -359,7 +367,7 @@ function CeldaFecha({
       value={draft}
       autoFocus
       placeholder="DD-MM-AAAA"
-      onChange={(e) => setDraft(e.target.value)}
+      onChange={(e) => setDraft(autoFormatFechaInput(e.target.value))}
       onBlur={confirmar}
       onKeyDown={(e) => {
         if (e.key === 'Enter') confirmar();
