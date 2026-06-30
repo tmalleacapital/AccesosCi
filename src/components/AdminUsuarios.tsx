@@ -56,11 +56,11 @@ function SelectorGrupoBp({
 }) {
   const hojaActual = hojas.find((h) => h.id === hojaId);
   return (
-    <div className="flex gap-1.5">
+    <div className="flex w-full min-w-0 gap-1.5">
       <select
         value={hojaId}
         onChange={(e) => onChange(e.target.value, '')}
-        className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+        className="w-0 min-w-0 flex-1 truncate rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
       >
         <option value="">MBP…</option>
         {hojas.map((h) => (
@@ -73,7 +73,7 @@ function SelectorGrupoBp({
         value={grupoNombre}
         disabled={!hojaActual}
         onChange={(e) => onChange(hojaId, e.target.value)}
-        className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
+        className="w-0 min-w-0 flex-1 truncate rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
       >
         <option value="">Grupo…</option>
         {hojaActual?.grupos.map((g) => (
