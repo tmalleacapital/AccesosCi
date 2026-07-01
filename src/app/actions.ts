@@ -15,11 +15,14 @@ import {
   guardarEdicionCorreo,
   ocultarGrupo,
   guardarSolicitud,
+  leerMiembrosExtra,
   leerPlataformas,
   leerSolicitudes,
   leerUsuarios,
+  SolicitudIdDuplicadoError,
   transferirMiembroExtra,
 } from '@/lib/db';
+import correosData from '@/data/correos.json';
 import { clearSesion, getSesion, setSesion } from '@/lib/session';
 import { esCorreoCorporativo } from '@/lib/services/auth.service';
 import { generarOtp, guardarOtp, limpiarOtp, verificarOtp } from '@/lib/services/otp.service';
@@ -43,6 +46,40 @@ import {
 import type { DatosCreacion, DatosSolicitud, EstadoSolicitud, Rol, TipoSolicitud } from '@/types';
 
 const RESPONSABLE_CORREO = 'tmallea@capitalinteligente.cl';
+
+interface AsesorEstaticoRaw {
+  correo: string;
+}
+interface GrupoEstaticoRaw {
+  asesores: AsesorEstaticoRaw[];
+}
+interface HojaEstaticaRaw {
+  grupos: GrupoEstaticoRaw[];
+}
+const correosEstaticos = (correosData as { hojas: HojaEstaticaRaw[] }).hojas.flatMap((h) =>
+  h.grupos.flatMap((g) => g.asesores.map((a) => a.correo.toLowerCase())),
+);
+
+async function existeCorreoEnAlgunGrupo(correo: string): Promise<boolean> {
+  const buscado = correo.toLowerCase();
+  if (correosEstaticos.includes(buscado)) return true;
+  const miembros = await leerMiembrosExtra();
+  return miembros.some((m) => m.correo.toLowerCase() === buscado);
+}
+
+// Evita filas duplicadas si se reintenta el mismo paso del ticket (doble clic, F5).
+async function crearMiembroExtraSiNoExiste(
+  hojaId: string,
+  grupoNombre: string,
+  nombre: string,
+  correo: string,
+  slack: boolean,
+  jira: boolean,
+  sf: string,
+): Promise<void> {
+  if (await existeCorreoEnAlgunGrupo(correo)) return;
+  await crearMiembroExtra(hojaId, grupoNombre, nombre, correo, slack, jira, sf);
+}
 
 export async function solicitarCodigoAction(_prev: unknown, formData: FormData) {
   const email = String(formData.get('email') ?? '')
@@ -83,8 +120,6 @@ export async function verificarCodigoAction(_prev: unknown, formData: FormData) 
     return { error: 'Código incorrecto o expirado.', email };
   }
 
-  await limpiarOtp();
-
   const usuarios = await leerUsuarios();
   const usuario = usuarios.find((u) => u.email.toLowerCase() === email);
 
@@ -96,6 +131,7 @@ export async function verificarCodigoAction(_prev: unknown, formData: FormData) 
     return { error: 'No tienes acceso a esta plataforma.', email };
   }
 
+  await limpiarOtp();
   await setSesion({ email, nombre, rol, ...(grupoBp ? { grupoBp } : {}) });
   redirect('/');
 }
@@ -139,10 +175,6 @@ export async function crearSolicitudAction(_prev: unknown, formData: FormData) {
 
   const PREFIJO: Record<string, string> = { crear: 'CREA', modificar: 'MOD', baja: 'ELIM' };
 
-  const todasLasSolicitudes = await leerSolicitudes();
-  const correlativo = todasLasSolicitudes.filter((s) => s.tipo === tipo).length + 1;
-  const id = `${PREFIJO[tipo]}#${correlativo}`;
-
   const input: NuevaSolicitudInput = {
     tipo,
     solicitanteEmail: sesion.email,
@@ -156,11 +188,27 @@ export async function crearSolicitudAction(_prev: unknown, formData: FormData) {
     return { error: errores.join(' ') };
   }
 
-  const solicitud = crearSolicitud(input, {
-    now: () => new Date(),
-    generarId: () => id,
-  });
-  await guardarSolicitud(solicitud);
+  // El correlativo se calcula contando solicitudes existentes, sin secuencia
+  // atómica en la BD. Si dos personas envían al mismo tiempo, reintentamos
+  // con un correlativo nuevo cuando el insert choca por id duplicado.
+  let solicitud;
+  const MAX_INTENTOS = 5;
+  for (let intento = 1; ; intento++) {
+    const todasLasSolicitudes = await leerSolicitudes();
+    const correlativo = todasLasSolicitudes.filter((s) => s.tipo === tipo).length + 1;
+    const id = `${PREFIJO[tipo]}#${correlativo}`;
+    solicitud = crearSolicitud(input, {
+      now: () => new Date(),
+      generarId: () => id,
+    });
+    try {
+      await guardarSolicitud(solicitud);
+      break;
+    } catch (err) {
+      if (err instanceof SolicitudIdDuplicadoError && intento < MAX_INTENTOS) continue;
+      throw err;
+    }
+  }
 
   const plataformas = await leerPlataformas();
   const correoEquipo = construirCorreoSolicitud(solicitud, plataformas);
@@ -245,8 +293,12 @@ export async function crearMiembroAction(
   const sesion = await getSesion();
   if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
   if (!nombre.trim()) throw new Error('El nombre no puede estar vacío.');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) throw new Error('El correo no es válido.');
-  await crearMiembroExtra(hojaId, grupoNombre, nombre.trim(), correo.trim(), slack, jira, sf);
+  const correoLimpio = correo.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoLimpio)) throw new Error('El correo no es válido.');
+  if (await existeCorreoEnAlgunGrupo(correoLimpio)) {
+    throw new Error('Este correo ya existe en otro grupo.');
+  }
+  await crearMiembroExtra(hojaId, grupoNombre, nombre.trim(), correoLimpio, slack, jira, sf);
   revalidatePath('/');
 }
 
@@ -300,7 +352,7 @@ export async function cambiarEstadoAction(formData: FormData) {
       const tieneSlack = plataformas.some(
         (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('slack'),
       );
-      await crearMiembroExtra(
+      await crearMiembroExtraSiNoExiste(
         bpHojaId,
         bpGrupoNombre,
         nombreCompleto,
@@ -415,7 +467,7 @@ export async function cambiarEstadoAction(formData: FormData) {
       const tieneJira = plataformas.some(
         (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('jira'),
       );
-      await crearMiembroExtra(
+      await crearMiembroExtraSiNoExiste(
         bpHojaId,
         bpGrupoNombre,
         nombreCompleto,

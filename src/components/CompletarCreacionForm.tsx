@@ -93,8 +93,6 @@ export function CompletarCreacionForm({
       <input type="hidden" name="estado" value={nextEstado} />
       <input type="hidden" name="bpHojaId" value={bpHojaId} />
       <input type="hidden" name="bpGrupoNombre" value={bpGrupoNombre} />
-      <input type="hidden" name="bpSlack" value={String(selectedBP?.usaSlack ?? false)} />
-      <input type="hidden" name="bpJira" value={String(selectedBP?.usaJira ?? false)} />
       <div className="flex flex-wrap items-end gap-3">
         <div className="w-full sm:w-60">
           <label htmlFor={`correo-${id}`} className="block text-xs text-muted-foreground mb-1">

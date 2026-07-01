@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { PRECIOS } from '@/lib/precios';
+import { getSesion } from '@/lib/session';
 
 const AZUL     = 'FF1B3A5C';
 const VERDE    = 'FF1A5C38';
@@ -174,34 +175,45 @@ function escribirGrupo(
 }
 
 export async function POST(req: NextRequest) {
-  const { hojaLabel, grupos, edits, eliminadas: eliminadasArr } = await req.json();
-  const eliminadas = new Set<string>(eliminadasArr ?? []);
-
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet(hojaLabel.replace(/[*?:\\/[\]]/g, '-').slice(0, 31));
-  ws.columns = COLS;
-
-  const gruposArr = grupos as { grupoNombre: string; asesores: Asesor[] }[];
-
-  for (let i = 0; i < gruposArr.length; i++) {
-    const { grupoNombre, asesores } = gruposArr[i];
-    escribirGrupo(ws, grupoNombre, asesores, edits, eliminadas);
-
-    // 3 filas vacías entre grupos (no después del último)
-    if (i < gruposArr.length - 1) {
-      ws.addRow([]);
-      ws.addRow([]);
-      ws.addRow([]);
+  try {
+    const sesion = await getSesion();
+    if (!sesion || (sesion.rol !== 'admin' && sesion.rol !== 'finanzas')) {
+      return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
     }
+
+    const { hojaLabel, grupos, edits, eliminadas: eliminadasArr } = await req.json();
+    const eliminadas = new Set<string>(eliminadasArr ?? []);
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(hojaLabel.replace(/[*?:\\/[\]]/g, '-').slice(0, 31));
+    ws.columns = COLS;
+
+    const gruposArr = grupos as { grupoNombre: string; asesores: Asesor[] }[];
+
+    for (let i = 0; i < gruposArr.length; i++) {
+      const { grupoNombre, asesores } = gruposArr[i];
+      escribirGrupo(ws, grupoNombre, asesores, edits, eliminadas);
+
+      // 3 filas vacías entre grupos (no después del último)
+      if (i < gruposArr.length - 1) {
+        ws.addRow([]);
+        ws.addRow([]);
+        ws.addRow([]);
+      }
+    }
+
+    const buffer = await wb.xlsx.writeBuffer();
+
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="${encodeURIComponent(hojaLabel)}.xlsx"`,
+      },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[export-mbp]', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  const buffer = await wb.xlsx.writeBuffer();
-
-  return new NextResponse(buffer, {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="${encodeURIComponent(hojaLabel)}.xlsx"`,
-    },
-  });
 }

@@ -318,9 +318,11 @@ export function AdminUsuarios({
   );
 
   async function handleCambiarRol(email: string, rol: Rol) {
+    const usuario = usuarios.find((u) => u.email === email);
+    const grupoBp = rol === 'bp' ? usuario?.grupoBp : undefined;
     setPendingEmail(email);
     try {
-      await actualizarRolUsuarioAction(email, rol, undefined);
+      await actualizarRolUsuarioAction(email, rol, grupoBp);
     } finally {
       setPendingEmail(null);
     }

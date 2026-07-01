@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { PRECIOS } from '@/lib/precios';
+import { getSesion } from '@/lib/session';
 
 const AZUL     = 'FF1B3A5C';
 const VERDE    = 'FF1A5C38';
@@ -39,7 +40,21 @@ function makeBorder(color = BORDE): any {
 
 export async function POST(req: NextRequest) {
   try {
+  const sesion = await getSesion();
+  if (!sesion || (sesion.rol !== 'admin' && sesion.rol !== 'bp' && sesion.rol !== 'finanzas')) {
+    return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
+  }
+
   const { grupoNombre, asesores, edits, eliminadas: eliminadasArr } = await req.json();
+
+  if (sesion.rol === 'bp') {
+    const sep = sesion.grupoBp?.indexOf('|') ?? -1;
+    const grupoPropio = sep !== -1 ? sesion.grupoBp!.slice(sep + 1) : undefined;
+    if (!grupoPropio || grupoPropio !== grupoNombre) {
+      return NextResponse.json({ error: 'No autorizado.' }, { status: 403 });
+    }
+  }
+
   const eliminadas = new Set<string>(eliminadasArr ?? []);
 
   const wb = new ExcelJS.Workbook();

@@ -100,6 +100,13 @@ export async function leerSolicitudes(): Promise<Solicitud[]> {
   return (data ?? []).map((row) => rowToSolicitud(row as SolicitudRow));
 }
 
+export class SolicitudIdDuplicadoError extends Error {
+  constructor(id: string) {
+    super(`Ya existe una solicitud con id ${id}`);
+    this.name = 'SolicitudIdDuplicadoError';
+  }
+}
+
 export async function guardarSolicitud(solicitud: Solicitud): Promise<void> {
   const { error } = await getSupabase()
     .from('solicitudes')
@@ -114,7 +121,10 @@ export async function guardarSolicitud(solicitud: Solicitud): Promise<void> {
       comentario: solicitud.comentario ?? null,
       correo_corporativo_asignado: solicitud.correoCorporativoAsignado ?? null,
     });
-  if (error) throw new Error(`guardarSolicitud: ${error.message}`);
+  if (error) {
+    if (error.code === '23505') throw new SolicitudIdDuplicadoError(solicitud.id);
+    throw new Error(`guardarSolicitud: ${error.message}`);
+  }
 }
 
 /** Devuelve un mapa { "correo||campo": valor } con todos los overrides del directorio. */

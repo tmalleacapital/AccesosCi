@@ -1747,7 +1747,7 @@ export function ListaCorreos({
   );
 
   const bpsInfo = useMemo(() => {
-    const todosGrupos = [...hoja.grupos, ...gruposDinamicos];
+    const todosGrupos = [...hoja.grupos.filter((g) => !ocultoSet.has(g.nombre)), ...gruposDinamicos];
     return todosGrupos.map((g) => ({
       nombre: g.nombre,
       correos: g.asesores.filter(
@@ -1758,7 +1758,7 @@ export function ListaCorreos({
       ).length,
       extraId: 'extraId' in g ? (g.extraId as string) : undefined,
     }));
-  }, [hoja.grupos, gruposDinamicos, edits, eliminadas]);
+  }, [hoja.grupos, gruposDinamicos, ocultoSet, edits, eliminadas]);
   const totalGeneral = useMemo(() => {
     return todasHojas.reduce((total, h) => {
       const ocultosH = new Set(gruposOcultos.filter((g) => g.hojaId === h.id).map((g) => g.nombre));
@@ -1817,9 +1817,15 @@ export function ListaCorreos({
 
   function handleEdit(correoOrig: string, campo: string, valor: string) {
     const key = estKey(correoOrig, campo);
+    const anterior = edits[key];
     startTransition(() => {
       actualizarEdits({ key, valor });
-      editarCorreoAction(correoOrig, campo, valor);
+    });
+    editarCorreoAction(correoOrig, campo, valor).catch((err) => {
+      startTransition(() => {
+        actualizarEdits({ key, valor: anterior ?? '' });
+      });
+      alert(`No se pudo guardar el cambio: ${err instanceof Error ? err.message : 'Error desconocido'}`);
     });
   }
 
@@ -1835,7 +1841,18 @@ export function ListaCorreos({
     setUndoItem({ correo, nombre });
     startTransition(() => {
       actualizarEdits({ key: estKey(correo, 'eliminado'), valor: 'true' });
-      eliminarCorreoAction(correo);
+    });
+    eliminarCorreoAction(correo).catch((err) => {
+      setEliminadas((prev) => {
+        const next = new Set(prev);
+        next.delete(correo);
+        return next;
+      });
+      startTransition(() => {
+        actualizarEdits({ key: estKey(correo, 'eliminado'), valor: '' });
+      });
+      setUndoItem(null);
+      alert(`No se pudo eliminar "${nombre}": ${err instanceof Error ? err.message : 'Error desconocido'}`);
     });
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     undoTimerRef.current = setTimeout(() => {
@@ -1846,7 +1863,7 @@ export function ListaCorreos({
   function handleDeshacer() {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     if (undoItem) {
-      const { correo } = undoItem;
+      const { correo, nombre } = undoItem;
       setEliminadas((prev) => {
         const next = new Set(prev);
         next.delete(correo);
@@ -1854,7 +1871,13 @@ export function ListaCorreos({
       });
       startTransition(() => {
         actualizarEdits({ key: estKey(correo, 'eliminado'), valor: '' });
-        restaurarCorreoAction(correo);
+      });
+      restaurarCorreoAction(correo).catch((err) => {
+        setEliminadas((prev) => new Set(prev).add(correo));
+        startTransition(() => {
+          actualizarEdits({ key: estKey(correo, 'eliminado'), valor: 'true' });
+        });
+        alert(`No se pudo deshacer la eliminación de "${nombre}": ${err instanceof Error ? err.message : 'Error desconocido'}`);
       });
     }
     setUndoItem(null);
