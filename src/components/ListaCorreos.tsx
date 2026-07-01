@@ -1088,12 +1088,18 @@ function TablaGrupo({
     [grupo, edits, eliminadas],
   );
 
-  const asesoresVisibles = grupo.asesores.filter(
-    (a) =>
-      !eliminadas.has(a.correo) &&
-      edits[estKey(a.correo, 'eliminado')] !== 'true' &&
-      (a.esDinamico || edits[estKey(a.correo, 'transferido')] !== 'true'),
-  );
+  const asesoresVisibles = grupo.asesores
+    .filter(
+      (a) =>
+        !eliminadas.has(a.correo) &&
+        edits[estKey(a.correo, 'eliminado')] !== 'true' &&
+        (a.esDinamico || edits[estKey(a.correo, 'transferido')] !== 'true'),
+    )
+    .sort((a, b) => {
+      const nombreA = edits[estKey(a.correo, 'nombre')] ?? a.nombre;
+      const nombreB = edits[estKey(b.correo, 'nombre')] ?? b.nombre;
+      return nombreA.localeCompare(nombreB, 'es', { sensitivity: 'base' });
+    });
 
   return (
     <div className="space-y-2">
