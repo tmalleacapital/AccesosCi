@@ -12,6 +12,7 @@ import {
   eliminarCorreoAction,
   eliminarGrupoAction,
   ocultarGrupoAction,
+  restaurarCorreoAction,
   transferirCorreoAction,
 } from '@/app/actions';
 import type { GrupoExtra, HojaExtra, MiembroExtra } from '@/lib/db';
@@ -1783,28 +1784,28 @@ export function ListaCorreos({
     setConfirming(null);
     setEliminadas((prev) => new Set(prev).add(correo));
     setUndoItem({ correo, nombre });
+    startTransition(() => {
+      actualizarEdits({ key: estKey(correo, 'eliminado'), valor: 'true' });
+      eliminarCorreoAction(correo);
+    });
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     undoTimerRef.current = setTimeout(() => {
       setUndoItem(null);
-      setEliminadas((prev) => {
-        const next = new Set(prev);
-        next.delete(correo);
-        return next;
-      });
-      startTransition(() => {
-        actualizarEdits({ key: estKey(correo, 'eliminado'), valor: 'true' });
-        eliminarCorreoAction(correo);
-      });
     }, UNDO_MS);
   }
 
   function handleDeshacer() {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     if (undoItem) {
+      const { correo } = undoItem;
       setEliminadas((prev) => {
         const next = new Set(prev);
-        next.delete(undoItem.correo);
+        next.delete(correo);
         return next;
+      });
+      startTransition(() => {
+        actualizarEdits({ key: estKey(correo, 'eliminado'), valor: '' });
+        restaurarCorreoAction(correo);
       });
     }
     setUndoItem(null);
