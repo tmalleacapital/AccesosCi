@@ -233,6 +233,23 @@ export async function ocultarGrupoAction(hojaId: string, nombre: string): Promis
   revalidatePath('/');
 }
 
+export async function crearMiembroAction(
+  hojaId: string,
+  grupoNombre: string,
+  nombre: string,
+  correo: string,
+  slack: boolean,
+  jira: boolean,
+  sf: string,
+): Promise<void> {
+  const sesion = await getSesion();
+  if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
+  if (!nombre.trim()) throw new Error('El nombre no puede estar vacío.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) throw new Error('El correo no es válido.');
+  await crearMiembroExtra(hojaId, grupoNombre, nombre.trim(), correo.trim(), slack, jira, sf);
+  revalidatePath('/');
+}
+
 export async function cambiarEstadoAction(formData: FormData) {
   const sesion = await getSesion();
   if (!sesion || (sesion.rol !== 'equipo' && sesion.rol !== 'admin')) {

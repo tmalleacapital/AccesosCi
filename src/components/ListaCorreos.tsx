@@ -7,6 +7,7 @@ import correosData from '@/data/correos.json';
 import {
   crearGrupoAction,
   crearHojaAction,
+  crearMiembroAction,
   editarCorreoAction,
   eliminarCorreoAction,
   eliminarGrupoAction,
@@ -1055,6 +1056,7 @@ function BadgeNumeroEditable({
 }
 
 function TablaGrupo({
+  hojaId,
   grupo,
   columnas,
   edits,
@@ -1066,6 +1068,7 @@ function TablaGrupo({
   soloLectura = false,
   esAdmin = false,
 }: {
+  hojaId: string;
   grupo: Grupo;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
   edits: Record<string, string>;
@@ -1078,6 +1081,7 @@ function TablaGrupo({
   esAdmin?: boolean;
 }) {
   const [exportando, setExportando] = useState(false);
+  const [agregando, setAgregando] = useState(false);
   const metricas = useMemo(
     () => calcularMetricasDinamicas(grupo, edits, eliminadas),
     [grupo, edits, eliminadas],
@@ -1160,7 +1164,26 @@ function TablaGrupo({
                   Fecha baja
                 </th>
               )}
-              {esAdmin && <th className="px-3 py-2 font-semibold text-foreground">Comentario</th>}
+              {esAdmin && (
+                <th className="px-3 py-2 font-semibold text-foreground">
+                  <div className="flex items-center justify-between gap-2">
+                    <span>Comentario</span>
+                    {!soloLectura && (
+                      <button
+                        type="button"
+                        onClick={() => setAgregando(true)}
+                        className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-xs font-normal text-foreground hover:bg-muted"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Agregar correo
+                      </button>
+                    )}
+                  </div>
+                </th>
+              )}
               {!soloLectura && <th className="w-16" />}
             </tr>
           </thead>
@@ -1183,6 +1206,25 @@ function TablaGrupo({
           </tbody>
         </table>
       </div>
+
+      {agregando && (
+        <ModalAgregarCorreo
+          grupoNombre={grupo.nombre}
+          onCrear={async (datos) => {
+            await crearMiembroAction(
+              hojaId,
+              grupo.nombre,
+              datos.nombre,
+              datos.correo,
+              datos.slack,
+              datos.jira,
+              datos.sf,
+            );
+            setAgregando(false);
+          }}
+          onCancelar={() => setAgregando(false)}
+        />
+      )}
     </div>
   );
 }
@@ -1263,7 +1305,115 @@ function ModalEliminarBP({
   );
 }
 
-// ─── Modal nuevo equipo ───────────────────────────────────────────────────────
+// ─── Modal agregar correo ─────────────────────────────────────────────────────
+
+function ModalAgregarCorreo({
+  grupoNombre,
+  onCrear,
+  onCancelar,
+}: {
+  grupoNombre: string;
+  onCrear: (datos: { nombre: string; correo: string; slack: boolean; jira: boolean; sf: string }) => Promise<void>;
+  onCancelar: () => void;
+}) {
+  const [nombre, setNombre] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [slack, setSlack] = useState(false);
+  const [jira, setJira] = useState(false);
+  const [sf, setSf] = useState('');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    ref.current?.focus();
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nombre.trim() || !correo.trim() || pending) return;
+    setPending(true);
+    setError(null);
+    try {
+      await onCrear({ nombre: nombre.trim(), correo: correo.trim(), slack, jira, sf });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al agregar el correo.');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={() => !pending && onCancelar()}
+    >
+      <div
+        className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold text-foreground">Agregar correo</h2>
+          <p className="text-sm text-muted-foreground">Nuevo integrante de «{grupoNombre}».</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            ref={ref}
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            onKeyDown={(e) => e.key === 'Escape' && !pending && onCancelar()}
+            placeholder="Nombre completo"
+            disabled={pending}
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
+          />
+          <input
+            value={correo}
+            onChange={(e) => setCorreo(e.target.value)}
+            onKeyDown={(e) => e.key === 'Escape' && !pending && onCancelar()}
+            placeholder="correo@capitalinteligente.cl"
+            type="email"
+            disabled={pending}
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
+          />
+          <div className="flex items-center gap-4 text-sm text-foreground">
+            <label className="flex items-center gap-1.5">
+              <input type="checkbox" checked={jira} onChange={(e) => setJira(e.target.checked)} disabled={pending} />
+              Jira
+            </label>
+            <label className="flex items-center gap-1.5">
+              <input type="checkbox" checked={slack} onChange={(e) => setSlack(e.target.checked)} disabled={pending} />
+              Slack
+            </label>
+            <select
+              value={sf}
+              onChange={(e) => setSf(e.target.value)}
+              disabled={pending}
+              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground disabled:opacity-40"
+            >
+              <option value="">Salesforce: —</option>
+              <option value="Portal">Salesforce: Portal</option>
+              <option value="Cloud">Salesforce: Cloud</option>
+            </select>
+          </div>
+          {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={onCancelar} disabled={pending} className={BTN_SECONDARY}>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={!nombre.trim() || !correo.trim() || pending}
+              className={cn(BTN_PRIMARY, 'flex items-center gap-1.5')}
+            >
+              {pending && <Spinner />}
+              {pending ? 'Agregando…' : 'Agregar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function ModalNuevoEquipo({
   titulo = 'Nuevo equipo',
@@ -1899,6 +2049,7 @@ export function ListaCorreos({
           grupos.map((g) => (
             <TablaGrupo
               key={g.nombre}
+              hojaId={hoja.id}
               grupo={g}
               columnas={columnas}
               edits={edits}
