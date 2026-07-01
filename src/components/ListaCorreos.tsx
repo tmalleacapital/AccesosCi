@@ -196,6 +196,76 @@ async function exportarHojaXlsx(
   URL.revokeObjectURL(url);
 }
 
+async function exportarTodosMbpXlsx(
+  hojas: Hoja[],
+  gruposExtra: GrupoExtra[],
+  gruposOcultos: { hojaId: string; nombre: string }[],
+  miembrosExtra: MiembroExtra[],
+  edits: Record<string, string>,
+  eliminadas: Set<string>,
+) {
+  const hojasPayload = hojas.map((hoja) => {
+    const ocultos = new Set(
+      gruposOcultos.filter((g) => g.hojaId === hoja.id).map((g) => g.nombre),
+    );
+
+    const gruposDin = gruposExtra
+      .filter((g) => g.hojaId === hoja.id)
+      .map((g) => ({ nombre: g.nombre, asesores: [] as Grupo['asesores'] }));
+
+    const todosGrupos = [...hoja.grupos.filter((g) => !ocultos.has(g.nombre)), ...gruposDin].map(
+      (g) => {
+        const extras = miembrosExtra
+          .filter((m) => m.hojaId === hoja.id && m.grupoNombre === g.nombre)
+          .map((m) => ({
+            nombre: m.nombre,
+            correo: m.correo,
+            estado: m.estado,
+            jira: m.jira,
+            slack: m.slack,
+            sf: m.sf,
+            tl: false as boolean,
+            fechaEliminacion: undefined as string | undefined,
+            esDinamico: true,
+          }));
+        return extras.length > 0 ? { ...g, asesores: [...g.asesores, ...extras] } : g;
+      },
+    );
+
+    return { hojaLabel: etiquetaHoja(hoja.nombre), grupos: todosGrupos };
+  });
+
+  const todosCorreos = hojasPayload.flatMap((h) => h.grupos.flatMap((g) => g.asesores.map((a) => a.correo)));
+  const editsFiltrados = filtrarEdits(todosCorreos, edits);
+
+  const res = await fetch('/api/export-todos-mbp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      hojas: hojasPayload.map((h) => ({
+        hojaLabel: h.hojaLabel,
+        grupos: h.grupos.map((g) => ({ grupoNombre: g.nombre, asesores: g.asesores })),
+      })),
+      edits: editsFiltrados,
+      eliminadas: [...eliminadas],
+    }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    alert(`Error al generar el archivo: ${errBody.error ?? res.status}`);
+    return;
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Todos los MBP ${fechaDescarga()}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ─── Spinner de carga ─────────────────────────────────────────────────────────
 
 function Spinner({ className }: { className?: string }) {
@@ -1429,6 +1499,7 @@ export function ListaCorreos({
   const [transferirPending, setTransferirPending] = useState(false);
   const [eliminarGrupoPending, setEliminarGrupoPending] = useState(false);
   const [exportandoHojaId, setExportandoHojaId] = useState<string | null>(null);
+  const [exportandoTodos, setExportandoTodos] = useState(false);
 
   const [edits, actualizarEdits] = useOptimistic(
     editsInicial,
@@ -1676,6 +1747,37 @@ export function ListaCorreos({
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
               Nuevo MBP
+            </button>
+          )}
+          {!soloLectura && (
+            <button
+              type="button"
+              disabled={exportandoTodos}
+              onClick={async () => {
+                setExportandoTodos(true);
+                try {
+                  await exportarTodosMbpXlsx(
+                    hojasVisibles,
+                    gruposExtra,
+                    gruposOcultos,
+                    miembrosExtra,
+                    edits,
+                    eliminadas,
+                  );
+                } finally {
+                  setExportandoTodos(false);
+                }
+              }}
+              className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground hover:bg-muted disabled:opacity-40"
+            >
+              {exportandoTodos ? (
+                <Spinner />
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              )}
+              Exportar MBPs
             </button>
           )}
         </div>
