@@ -127,6 +127,17 @@ export async function guardarSolicitud(solicitud: Solicitud): Promise<void> {
   }
 }
 
+export async function leerEdicionCorreo(correo: string, campo: string): Promise<string | null> {
+  const { data, error } = await getSupabase()
+    .from('correos_edits')
+    .select('valor')
+    .eq('correo', correo)
+    .eq('campo', campo)
+    .maybeSingle();
+  if (error) throw new Error(`leerEdicionCorreo: ${error.message}`);
+  return (data?.valor as string | undefined) ?? null;
+}
+
 /** Devuelve un mapa { "correo||campo": valor } con todos los overrides del directorio. */
 export async function leerEdicionesCorreos(): Promise<Record<string, string>> {
   const { data, error } = await getSupabase().from('correos_edits').select('correo, campo, valor');

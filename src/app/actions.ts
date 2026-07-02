@@ -15,6 +15,7 @@ import {
   guardarEdicionCorreo,
   ocultarGrupo,
   guardarSolicitud,
+  leerEdicionCorreo,
   leerHojasExtra,
   leerMiembrosExtra,
   leerPlataformas,
@@ -45,9 +46,16 @@ import {
   RESPONSABLE_SALESFORCE,
   RESPONSABLE_JIRA,
 } from '@/lib/services/notificaciones.service';
-import type { DatosCreacion, DatosSolicitud, EstadoSolicitud, Rol, TipoSolicitud } from '@/types';
+import type { DatosBaja, DatosCreacion, DatosSolicitud, EstadoSolicitud, Rol, TipoSolicitud } from '@/types';
 
 const RESPONSABLE_CORREO = 'tmallea@capitalinteligente.cl';
+
+function fechaHoyChile(): string {
+  return new Intl.DateTimeFormat('es-CL', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    timeZone: 'America/Santiago',
+  }).format(new Date()).replace(/\//g, '-');
+}
 
 interface AsesorEstaticoRaw {
   correo: string;
@@ -494,6 +502,26 @@ export async function cambiarEstadoAction(formData: FormData) {
         tieneJira,
         '',
       );
+    }
+
+    if (solicitudFinal.tipo === 'baja') {
+      const correoBaja = (solicitudFinal.datos as DatosBaja).correoCorporativo;
+      const fecha = fechaHoyChile();
+      const [estadoActual, comentarioActual] = await Promise.all([
+        leerEdicionCorreo(correoBaja, 'estado'),
+        leerEdicionCorreo(correoBaja, 'comentario'),
+      ]);
+      const nuevoComentario = comentarioActual
+        ? `${comentarioActual}\nEliminado el ${fecha}`
+        : `Eliminado el ${fecha}`;
+      await Promise.all([
+        guardarEdicionCorreo(correoBaja, 'estado', 'Eliminado'),
+        guardarEdicionCorreo(correoBaja, 'comentario', nuevoComentario),
+      ]);
+      await Promise.all([
+        registrarHistorial(correoBaja, 'estado', estadoActual ?? 'Activo', 'Eliminado', sesion.email),
+        registrarHistorial(correoBaja, 'comentario', comentarioActual, nuevoComentario, sesion.email),
+      ]);
     }
   }
 
