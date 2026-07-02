@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { cambiarEstadoAction } from '@/app/actions';
 import correosData from '@/data/correos.json';
-import type { GrupoExtra } from '@/lib/db';
+import type { GrupoExtra, HojaExtra } from '@/lib/db';
 import type { EstadoSolicitud } from '@/types';
 import { BotonSubmit } from '@/components/BotonSubmit';
 
@@ -33,7 +33,7 @@ interface BPOption {
   isDynamic: boolean;
 }
 
-function buildBPOptions(gruposExtra: GrupoExtra[]): BPOption[] {
+function buildBPOptions(gruposExtra: GrupoExtra[], hojasExtra: HojaExtra[]): BPOption[] {
   const options: BPOption[] = [];
   for (const hoja of data.hojas) {
     for (const grupo of hoja.grupos) {
@@ -50,10 +50,16 @@ function buildBPOptions(gruposExtra: GrupoExtra[]): BPOption[] {
     }
   }
   for (const g of gruposExtra) {
+    const hojaEstatica = data.hojas.find((h) => h.id === g.hojaId);
+    const hojaDinamica = hojasExtra.find((h) => h.id === g.hojaId);
+    const hojaLabel = (hojaEstatica?.nombre ?? hojaDinamica?.nombre ?? 'Dinámico').replace(
+      /^MBP\s+/,
+      '',
+    );
     options.push({
       key: `dynamic::${g.id}`,
       label: g.nombre,
-      hojaLabel: 'Dinámico',
+      hojaLabel,
       usaSlack: false,
       usaJira: false,
       isDynamic: true,
@@ -65,14 +71,16 @@ function buildBPOptions(gruposExtra: GrupoExtra[]): BPOption[] {
 export function CompletarCreacionForm({
   id,
   gruposExtra = [],
+  hojasExtra = [],
   nextEstado = 'completada',
 }: {
   id: string;
   gruposExtra?: GrupoExtra[];
+  hojasExtra?: HojaExtra[];
   nextEstado?: EstadoSolicitud;
 }) {
   const [bpKey, setBpKey] = useState('');
-  const bpOptions = useMemo(() => buildBPOptions(gruposExtra), [gruposExtra]);
+  const bpOptions = useMemo(() => buildBPOptions(gruposExtra, hojasExtra), [gruposExtra, hojasExtra]);
   const selectedBP = bpOptions.find((bp) => bp.key === bpKey);
 
   const bpHojaId = useMemo(() => {

@@ -132,6 +132,7 @@ export default async function Home({
                   plataformas={plataformas}
                   esEquipo={esEquipo}
                   gruposExtra={gruposExtra}
+                  hojasExtra={hojasExtra}
                   usuarioEmail={sesion.email}
                 />
               ),

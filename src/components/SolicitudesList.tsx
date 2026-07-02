@@ -12,7 +12,7 @@ import { agruparPorTipo } from '@/lib/services/solicitudes.service';
 import { DashboardTabs } from '@/components/DashboardTabs';
 import { CompletarCreacionForm } from '@/components/CompletarCreacionForm';
 import { BotonSubmit } from '@/components/BotonSubmit';
-import type { GrupoExtra } from '@/lib/db';
+import type { GrupoExtra, HojaExtra } from '@/lib/db';
 
 const RESPONSABLE_CORREO = 'tmallea@capitalinteligente.cl';
 const RESPONSABLE_SALESFORCE = 'mguzman@capitalinteligente.cl';
@@ -157,12 +157,14 @@ export function SolicitudesList({
   plataformas,
   esEquipo,
   gruposExtra = [],
+  hojasExtra = [],
   usuarioEmail = '',
 }: {
   solicitudes: Solicitud[];
   plataformas: Plataforma[];
   esEquipo: boolean;
   gruposExtra?: GrupoExtra[];
+  hojasExtra?: HojaExtra[];
   usuarioEmail?: string;
 }) {
   if (solicitudes.length === 0) {
@@ -189,6 +191,7 @@ export function SolicitudesList({
                   plataformas={plataformas}
                   esEquipo={esEquipo}
                   gruposExtra={gruposExtra}
+                  hojasExtra={hojasExtra}
                   usuarioEmail={usuarioEmail}
                 />
               ))}
@@ -204,12 +207,14 @@ function SolicitudCard({
   plataformas,
   esEquipo,
   gruposExtra,
+  hojasExtra,
   usuarioEmail,
 }: {
   solicitud: Solicitud;
   plataformas: Plataforma[];
   esEquipo: boolean;
   gruposExtra: GrupoExtra[];
+  hojasExtra: HojaExtra[];
   usuarioEmail: string;
 }) {
   const esTmallea = usuarioEmail === RESPONSABLE_CORREO;
@@ -339,7 +344,7 @@ function SolicitudCard({
           {/* Paso 1: tmallea actúa en tickets crear activos */}
           {puedeAccionarTmallea && s.tipo === 'crear' && (
             <>
-              <CompletarCreacionForm id={s.id} gruposExtra={gruposExtra} nextEstado={nextEstado} />
+              <CompletarCreacionForm id={s.id} gruposExtra={gruposExtra} hojasExtra={hojasExtra} nextEstado={nextEstado} />
               <div className="flex gap-2 border-t border-border/50 pt-2">
                 <BotonEstado id={s.id} estado="en_proceso" label="Marcar en proceso" />
                 <BotonEstado id={s.id} estado="rechazada" label="Rechazar" />
