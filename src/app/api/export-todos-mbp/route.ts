@@ -66,6 +66,7 @@ function escribirGrupo(
   ws: ExcelJS.Worksheet,
   grupoNombre: string,
   asesores: Asesor[],
+  metricas: { portalCreadas?: number; salesCloud?: number } | undefined,
   edits: Record<string, string>,
   eliminadas: Set<string>,
 ) {
@@ -118,7 +119,7 @@ function escribirGrupo(
     const cS  = slack ? PRECIOS.slack   : 0;
     const cSF = sf === 'Cloud' ? PRECIOS.sfCloud : sf === 'Portal' ? PRECIOS.sfPortal : 0;
     const cT  = cG + cJ + cS + cSF;
-    totG += cG; totJ += cJ; totS += cS; totSF += cSF; totTotal += cT;
+    totG += cG; totJ += cJ; totS += cS;
 
     const par = rowIdx % 2 === 0;
     const row = ws.addRow([
@@ -149,6 +150,11 @@ function escribirGrupo(
     });
     rowIdx++;
   }
+
+  // El total de Salesforce refleja las cuentas Portal creadas + SalesCloud
+  // (no las filas activas en este momento).
+  totSF = Number(metricas?.portalCreadas ?? 0) * PRECIOS.sfPortal + Number(metricas?.salesCloud ?? 0) * PRECIOS.sfCloud;
+  totTotal = totG + totJ + totS + totSF;
 
   // Fila total
   const filaTotal = ws.addRow([
@@ -203,14 +209,21 @@ export async function POST(req: NextRequest) {
     const wb = new ExcelJS.Workbook();
     const usados = new Set<string>();
 
-    const hojasArr = hojas as { hojaLabel: string; grupos: { grupoNombre: string; asesores: Asesor[] }[] }[];
+    const hojasArr = hojas as {
+      hojaLabel: string;
+      grupos: {
+        grupoNombre: string;
+        asesores: Asesor[];
+        metricas?: { portalCreadas?: number; salesCloud?: number };
+      }[];
+    }[];
 
     for (const { hojaLabel, grupos } of hojasArr) {
       const ws = wb.addWorksheet(nombreHojaUnico(hojaLabel, usados));
       ws.columns = COLS;
       for (let i = 0; i < grupos.length; i++) {
-        const { grupoNombre, asesores } = grupos[i];
-        escribirGrupo(ws, grupoNombre, asesores, edits, eliminadas);
+        const { grupoNombre, asesores, metricas } = grupos[i];
+        escribirGrupo(ws, grupoNombre, asesores, metricas, edits, eliminadas);
         if (i < grupos.length - 1) {
           ws.addRow([]);
           ws.addRow([]);

@@ -100,6 +100,18 @@ function filtrarEdits(correos: string[], edits: Record<string, string>): Record<
   return out;
 }
 
+function metricasParaExport(
+  grupo: Grupo,
+  edits: Record<string, string>,
+  eliminadas: Set<string>,
+): { portalCreadas: number; salesCloud: number } {
+  const metricas = calcularMetricasDinamicas(grupo, edits, eliminadas);
+  return {
+    portalCreadas: metricas.find((m) => m.label === 'Cuentas Portal Creadas')?.valor ?? 0,
+    salesCloud: metricas.find((m) => m.label === 'Cuentas SalesCloud')?.valor ?? 0,
+  };
+}
+
 async function exportarGrupoXlsx(
   grupo: Grupo,
   edits: Record<string, string>,
@@ -113,6 +125,7 @@ async function exportarGrupoXlsx(
     body: JSON.stringify({
       grupoNombre: grupo.nombre,
       asesores: grupo.asesores,
+      metricas: metricasParaExport(grupo, edits, eliminadas),
       edits: editsFiltrados,
       eliminadas: [...eliminadas],
     }),
@@ -148,7 +161,15 @@ async function exportarHojaXlsx(
 
   const gruposDin = gruposExtra
     .filter((g) => g.hojaId === hoja.id)
-    .map((g) => ({ nombre: g.nombre, asesores: [] as Grupo['asesores'] }));
+    .map((g) => ({
+      nombre: g.nombre,
+      asesores: [] as Grupo['asesores'],
+      metricas: [
+        { label: 'Cuentas Portal Activo', valor: 0 },
+        { label: 'Cuentas Portal Creadas', valor: 0 },
+        { label: 'Cuentas SalesCloud', valor: 0 },
+      ],
+    }));
 
   const todosGrupos = [...hoja.grupos.filter((g) => !ocultos.has(g.nombre)), ...gruposDin].map(
     (g) => {
@@ -177,7 +198,11 @@ async function exportarHojaXlsx(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       hojaLabel: etiqueta,
-      grupos: todosGrupos.map((g) => ({ grupoNombre: g.nombre, asesores: g.asesores })),
+      grupos: todosGrupos.map((g) => ({
+        grupoNombre: g.nombre,
+        asesores: g.asesores,
+        metricas: metricasParaExport(g, edits, eliminadas),
+      })),
       edits: editsFiltrados,
       eliminadas: [...eliminadas],
     }),
@@ -213,7 +238,15 @@ async function exportarTodosMbpXlsx(
 
     const gruposDin = gruposExtra
       .filter((g) => g.hojaId === hoja.id)
-      .map((g) => ({ nombre: g.nombre, asesores: [] as Grupo['asesores'] }));
+      .map((g) => ({
+        nombre: g.nombre,
+        asesores: [] as Grupo['asesores'],
+        metricas: [
+          { label: 'Cuentas Portal Activo', valor: 0 },
+          { label: 'Cuentas Portal Creadas', valor: 0 },
+          { label: 'Cuentas SalesCloud', valor: 0 },
+        ],
+      }));
 
     const todosGrupos = [...hoja.grupos.filter((g) => !ocultos.has(g.nombre)), ...gruposDin].map(
       (g) => {
@@ -246,7 +279,11 @@ async function exportarTodosMbpXlsx(
     body: JSON.stringify({
       hojas: hojasPayload.map((h) => ({
         hojaLabel: h.hojaLabel,
-        grupos: h.grupos.map((g) => ({ grupoNombre: g.nombre, asesores: g.asesores })),
+        grupos: h.grupos.map((g) => ({
+          grupoNombre: g.nombre,
+          asesores: g.asesores,
+          metricas: metricasParaExport(g, edits, eliminadas),
+        })),
       })),
       edits: editsFiltrados,
       eliminadas: [...eliminadas],

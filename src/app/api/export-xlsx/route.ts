@@ -45,7 +45,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
   }
 
-  const { grupoNombre, asesores, edits, eliminadas: eliminadasArr } = await req.json();
+  const { grupoNombre, asesores, metricas, edits, eliminadas: eliminadasArr } = await req.json();
+  const portalCreadas = Number(metricas?.portalCreadas ?? 0);
+  const salesCloud = Number(metricas?.salesCloud ?? 0);
 
   if (sesion.rol === 'bp') {
     const sep = sesion.grupoBp?.indexOf('|') ?? -1;
@@ -122,7 +124,7 @@ export async function POST(req: NextRequest) {
     const cS  = slack ? PRECIOS.slack   : 0;
     const cSF = sf === 'Cloud' ? PRECIOS.sfCloud : sf === 'Portal' ? PRECIOS.sfPortal : 0;
     const cT  = cG + cJ + cS + cSF;
-    totG += cG; totJ += cJ; totS += cS; totSF += cSF; totTotal += cT;
+    totG += cG; totJ += cJ; totS += cS;
 
     const par = rowIdx % 2 === 0;
     const row = ws.addRow([
@@ -154,6 +156,11 @@ export async function POST(req: NextRequest) {
     });
     rowIdx++;
   }
+
+  // El total de Salesforce refleja las cuentas Portal creadas + SalesCloud
+  // (no las filas activas en este momento).
+  totSF = portalCreadas * PRECIOS.sfPortal + salesCloud * PRECIOS.sfCloud;
+  totTotal = totG + totJ + totS + totSF;
 
   const filaTotal = ws.addRow([
     'TOTAL', '', '', '', '', '', '', '', '',
