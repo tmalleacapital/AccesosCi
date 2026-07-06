@@ -131,6 +131,7 @@ export default async function Home({
                   solicitudes={solicitudes}
                   plataformas={plataformas}
                   esEquipo={esEquipo}
+                  esAdmin={esAdmin}
                   gruposExtra={gruposExtra}
                   hojasExtra={hojasExtra}
                   usuarioEmail={sesion.email}

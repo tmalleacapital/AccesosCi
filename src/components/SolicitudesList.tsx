@@ -156,6 +156,7 @@ export function SolicitudesList({
   solicitudes,
   plataformas,
   esEquipo,
+  esAdmin = false,
   gruposExtra = [],
   hojasExtra = [],
   usuarioEmail = '',
@@ -163,6 +164,7 @@ export function SolicitudesList({
   solicitudes: Solicitud[];
   plataformas: Plataforma[];
   esEquipo: boolean;
+  esAdmin?: boolean;
   gruposExtra?: GrupoExtra[];
   hojasExtra?: HojaExtra[];
   usuarioEmail?: string;
@@ -190,6 +192,7 @@ export function SolicitudesList({
                   solicitud={s}
                   plataformas={plataformas}
                   esEquipo={esEquipo}
+                  esAdmin={esAdmin}
                   gruposExtra={gruposExtra}
                   hojasExtra={hojasExtra}
                   usuarioEmail={usuarioEmail}
@@ -206,6 +209,7 @@ function SolicitudCard({
   solicitud: s,
   plataformas,
   esEquipo,
+  esAdmin,
   gruposExtra,
   hojasExtra,
   usuarioEmail,
@@ -213,6 +217,7 @@ function SolicitudCard({
   solicitud: Solicitud;
   plataformas: Plataforma[];
   esEquipo: boolean;
+  esAdmin: boolean;
   gruposExtra: GrupoExtra[];
   hojasExtra: HojaExtra[];
   usuarioEmail: string;
@@ -245,9 +250,21 @@ function SolicitudCard({
   const puedeAccionarTmallea = esEquipo && esTmallea && estadoActivo && !enEspera;
   const puedeAccionarGeneral =
     esEquipo && estadoActivo && !enEspera && s.tipo !== 'crear' && s.tipo !== 'baja';
+  // Un admin siempre puede rechazar, aunque el paso actual le corresponda a otra persona.
+  const soloRechazoAdmin =
+    esAdmin &&
+    estadoActivo &&
+    !puedeAccionarTmallea &&
+    !puedeAccionarGeneral &&
+    !puedeCompletarSalesforce &&
+    !puedeCompletarJira;
 
   const puedeAccionar =
-    puedeAccionarTmallea || puedeAccionarGeneral || puedeCompletarSalesforce || puedeCompletarJira;
+    puedeAccionarTmallea ||
+    puedeAccionarGeneral ||
+    puedeCompletarSalesforce ||
+    puedeCompletarJira ||
+    soloRechazoAdmin;
 
   return (
     <li className="overflow-hidden rounded-xl border border-border bg-card">
@@ -367,6 +384,13 @@ function SolicitudCard({
             <div className="flex flex-wrap gap-2">
               <BotonEstado id={s.id} estado="en_proceso" label="Marcar en proceso" />
               <BotonEstado id={s.id} estado="completada" label="Marcar completada" />
+              <BotonEstado id={s.id} estado="rechazada" label="Rechazar" />
+            </div>
+          )}
+
+          {/* Cualquier admin puede rechazar, aunque el paso actual no le corresponda */}
+          {soloRechazoAdmin && (
+            <div className="flex flex-wrap gap-2">
               <BotonEstado id={s.id} estado="rechazada" label="Rechazar" />
             </div>
           )}
