@@ -349,11 +349,13 @@ export async function cambiarEstadoAction(formData: FormData) {
   const tieneJira = plataformas.some(
     (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('jira'),
   );
+  // Un admin puede actuar en cualquier paso, aunque le corresponda a otra persona.
+  const esAdminSesion = sesion.rol === 'admin';
 
   // ── Paso 1: tmallea completa correo → esperando_salesforce | esperando_jira ─
   if (
     (estado === 'esperando_salesforce' || estado === 'esperando_jira') &&
-    sesion.email === RESPONSABLE_CORREO &&
+    (sesion.email === RESPONSABLE_CORREO || esAdminSesion) &&
     solicitud.tipo === 'crear'
   ) {
     if (!correoCorporativoAsignado) {
@@ -403,7 +405,7 @@ export async function cambiarEstadoAction(formData: FormData) {
   // ── Paso 1 (baja): tmallea saca Gmail/Slack → esperando_salesforce | esperando_jira ─
   if (
     (estado === 'esperando_salesforce' || estado === 'esperando_jira') &&
-    sesion.email === RESPONSABLE_CORREO &&
+    (sesion.email === RESPONSABLE_CORREO || esAdminSesion) &&
     solicitud.tipo === 'baja'
   ) {
     const solicitudFinal = cambiarEstadoSolicitud(solicitud, estado);
@@ -423,7 +425,7 @@ export async function cambiarEstadoAction(formData: FormData) {
   // ── Paso 2: mguzman completa Salesforce → esperando_jira | completada ──────
   if (
     estado === 'completada' &&
-    sesion.email === RESPONSABLE_SALESFORCE &&
+    (sesion.email === RESPONSABLE_SALESFORCE || esAdminSesion) &&
     solicitud.estado === 'esperando_salesforce'
   ) {
     const passwordAlmacenada = (solicitud.datos as DatosCreacion).passwordCorreo;
@@ -455,7 +457,7 @@ export async function cambiarEstadoAction(formData: FormData) {
   // ── Paso 3: cpeede completa Jira → completada ──────────────────────────────
   if (
     estado === 'completada' &&
-    sesion.email === RESPONSABLE_JIRA &&
+    (sesion.email === RESPONSABLE_JIRA || esAdminSesion) &&
     solicitud.estado === 'esperando_jira'
   ) {
     const passwordAlmacenada = (solicitud.datos as DatosCreacion).passwordCorreo;
