@@ -16,6 +16,7 @@ import {
   ocultarGrupo,
   guardarSolicitud,
   leerEdicionCorreo,
+  leerEdicionesCorreos,
   leerHojasExtra,
   leerMiembrosExtra,
   leerPlataformas,
@@ -73,10 +74,13 @@ const correosEstaticos = hojasEstaticas.flatMap((h) =>
   h.grupos.flatMap((g) => g.asesores.map((a) => a.correo.toLowerCase())),
 );
 
-async function existeCorreoEnAlgunGrupo(correo: string): Promise<boolean> {
+async function existeCorreoActivoEnOtroGrupo(correo: string): Promise<boolean> {
   const buscado = correo.toLowerCase();
+  const [edits, miembros] = await Promise.all([leerEdicionesCorreos(), leerMiembrosExtra()]);
+  const oculto =
+    edits[`${correo}||eliminado`] === 'true' || edits[`${correo}||transferido`] === 'true';
+  if (oculto) return false;
   if (correosEstaticos.includes(buscado)) return true;
-  const miembros = await leerMiembrosExtra();
   return miembros.some((m) => m.correo.toLowerCase() === buscado);
 }
 
@@ -89,6 +93,8 @@ async function etiquetaHojaGrupo(hojaId: string, grupoNombre: string): Promise<s
 }
 
 // Evita filas duplicadas si se reintenta el mismo paso del ticket (doble clic, F5).
+// El chequeo es solo dentro del mismo hoja+grupo: si la persona ya existia en
+// otro BP (activo o no), igual debe poder agregarse al nuevo.
 async function crearMiembroExtraSiNoExiste(
   hojaId: string,
   grupoNombre: string,
@@ -98,7 +104,14 @@ async function crearMiembroExtraSiNoExiste(
   jira: boolean,
   sf: string,
 ): Promise<void> {
-  if (await existeCorreoEnAlgunGrupo(correo)) return;
+  const miembros = await leerMiembrosExtra();
+  const yaExiste = miembros.some(
+    (m) =>
+      m.hojaId === hojaId &&
+      m.grupoNombre === grupoNombre &&
+      m.correo.toLowerCase() === correo.toLowerCase(),
+  );
+  if (yaExiste) return;
   await crearMiembroExtra(hojaId, grupoNombre, nombre, correo, slack, jira, sf);
 }
 
@@ -321,8 +334,8 @@ export async function crearMiembroAction(
   if (!nombre.trim()) throw new Error('El nombre no puede estar vacío.');
   const correoLimpio = correo.trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoLimpio)) throw new Error('El correo no es válido.');
-  if (await existeCorreoEnAlgunGrupo(correoLimpio)) {
-    throw new Error('Este correo ya existe en otro grupo.');
+  if (await existeCorreoActivoEnOtroGrupo(correoLimpio)) {
+    throw new Error('Este correo ya existe activo en otro grupo.');
   }
   await crearMiembroExtra(hojaId, grupoNombre, nombre.trim(), correoLimpio, slack, jira, sf);
   revalidatePath('/');
