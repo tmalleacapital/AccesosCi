@@ -245,9 +245,10 @@ function SolicitudCard({
       ? 'esperando_jira'
       : 'completada';
 
-  const puedeCompletarSalesforce = esEquipo && esMguzman && enEsperaSalesforce;
-  const puedeCompletarJira = esEquipo && esCpeede && enEsperaJira;
-  const puedeAccionarTmallea = esEquipo && esTmallea && estadoActivo && !enEspera;
+  // Un admin puede completar cualquier paso, aunque le corresponda a otra persona.
+  const puedeCompletarSalesforce = esEquipo && (esMguzman || esAdmin) && enEsperaSalesforce;
+  const puedeCompletarJira = esEquipo && (esCpeede || esAdmin) && enEsperaJira;
+  const puedeAccionarTmallea = esEquipo && (esTmallea || esAdmin) && estadoActivo && !enEspera;
   const puedeAccionarGeneral =
     esEquipo && estadoActivo && !enEspera && s.tipo !== 'crear' && s.tipo !== 'baja';
   // Un admin siempre puede rechazar, aunque el paso actual le corresponda a otra persona.
