@@ -14,6 +14,7 @@ import {
   ocultarGrupoAction,
   restaurarCorreoAction,
   transferirCorreoAction,
+  transferirGrupoAction,
 } from '@/app/actions';
 import type { GrupoExtra, HojaExtra, MiembroExtra } from '@/lib/db';
 import { PRECIOS } from '@/lib/precios';
@@ -36,6 +37,7 @@ interface Grupo {
   nombre: string;
   asesores: Asesor[];
   metricas: { label: string; valor: number }[];
+  extraId?: string;
 }
 
 interface Hoja {
@@ -1105,6 +1107,7 @@ function TablaGrupo({
   onEditMetrica,
   onEliminar,
   onTransferir,
+  onCambiarMbp,
   soloLectura = false,
   esAdmin = false,
 }: {
@@ -1117,6 +1120,7 @@ function TablaGrupo({
   onEditMetrica: (label: string, valor: number) => void;
   onEliminar: (correo: string, nombre: string) => void;
   onTransferir: (datos: TransferirDatos) => void;
+  onCambiarMbp: (datos: { hojaId: string; grupoNombre: string; extraId?: string }) => void;
   soloLectura?: boolean;
   esAdmin?: boolean;
 }) {
@@ -1215,17 +1219,32 @@ function TablaGrupo({
                   <div className="flex items-center justify-between gap-2">
                     <span>Comentario</span>
                     {!soloLectura && (
-                      <button
-                        type="button"
-                        onClick={() => setAgregando(true)}
-                        className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-xs font-normal text-foreground hover:bg-muted"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="12" y1="5" x2="12" y2="19" />
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                        Agregar correo
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onCambiarMbp({ hojaId, grupoNombre: grupo.nombre, extraId: grupo.extraId })
+                          }
+                          className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-xs font-normal text-foreground hover:bg-muted"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14" />
+                            <path d="m12 5 7 7-7 7" />
+                          </svg>
+                          Cambiar MBP
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAgregando(true)}
+                          className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-xs font-normal text-foreground hover:bg-muted"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                          </svg>
+                          Agregar correo
+                        </button>
+                      </div>
                     )}
                   </div>
                 </th>
@@ -1545,6 +1564,86 @@ interface BPDisponible {
   grupoNombre: string;
 }
 
+function ModalCambiarMBP({
+  grupoNombre,
+  hojaActualId,
+  todasHojas,
+  pending = false,
+  error,
+  onConfirmar,
+  onCancelar,
+}: {
+  grupoNombre: string;
+  hojaActualId: string;
+  todasHojas: { id: string; nombre: string }[];
+  pending?: boolean;
+  error?: string | null;
+  onConfirmar: (targetHojaId: string) => void;
+  onCancelar: () => void;
+}) {
+  const [seleccionado, setSeleccionado] = useState<string | null>(null);
+  const opciones = todasHojas.filter((h) => h.id !== hojaActualId);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={() => !pending && onCancelar()}
+    >
+      <div
+        className="flex max-h-[80vh] w-full max-w-sm flex-col space-y-4 rounded-xl border border-border bg-card p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold text-foreground">Cambiar MBP</h2>
+          <p className="text-sm text-muted-foreground">
+            Elige el nuevo MBP para <strong className="text-foreground">{grupoNombre}</strong>. Todos
+            sus correos se mueven junto con el BP.
+          </p>
+        </div>
+
+        <div className="flex-1 space-y-1 overflow-y-auto pr-1">
+          {opciones.map((h) => {
+            const activo = seleccionado === h.id;
+            return (
+              <button
+                key={h.id}
+                type="button"
+                disabled={pending}
+                onClick={() => setSeleccionado(h.id)}
+                className={cn(
+                  'w-full rounded-lg border px-3 py-2 text-left text-sm transition-colors disabled:opacity-40',
+                  activo
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'border-border text-foreground hover:bg-muted',
+                )}
+              >
+                {h.nombre.replace(/^MBP\s+/, '')}
+              </button>
+            );
+          })}
+        </div>
+
+        {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
+
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onCancelar} disabled={pending} className={BTN_SECONDARY}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={!seleccionado || pending}
+            onClick={() => seleccionado && onConfirmar(seleccionado)}
+            className={cn(BTN_PRIMARY, 'flex items-center gap-1.5')}
+          >
+            {pending && <Spinner />}
+            {pending ? 'Cambiando…' : 'Confirmar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ModalTransferirBP({
   nombre,
   todosBPs,
@@ -1698,6 +1797,13 @@ export function ListaCorreos({
   const [eliminarGrupoPending, setEliminarGrupoPending] = useState(false);
   const [exportandoHojaId, setExportandoHojaId] = useState<string | null>(null);
   const [exportandoTodos, setExportandoTodos] = useState(false);
+  const [cambiandoMbp, setCambiandoMbp] = useState<{
+    hojaId: string;
+    grupoNombre: string;
+    extraId?: string;
+  } | null>(null);
+  const [cambiandoMbpPending, setCambiandoMbpPending] = useState(false);
+  const [errorCambiarMbp, setErrorCambiarMbp] = useState<string | null>(null);
 
   const [edits, actualizarEdits] = useOptimistic(
     editsInicial,
@@ -1953,6 +2059,21 @@ export function ListaCorreos({
     }
   }
 
+  async function handleCambiarMbp(targetHojaId: string) {
+    if (!cambiandoMbp || cambiandoMbpPending) return;
+    const datos = cambiandoMbp;
+    setErrorCambiarMbp(null);
+    setCambiandoMbpPending(true);
+    try {
+      await transferirGrupoAction(datos.hojaId, datos.grupoNombre, datos.extraId, targetHojaId);
+      setCambiandoMbp(null);
+    } catch (e) {
+      setErrorCambiarMbp(e instanceof Error ? e.message : 'Error al cambiar el MBP del BP.');
+    } finally {
+      setCambiandoMbpPending(false);
+    }
+  }
+
   async function handleCrearEquipo(nombre: string) {
     await crearGrupoAction(hoja.id, nombre);
     setCreandoEquipo(false);
@@ -2177,6 +2298,7 @@ export function ListaCorreos({
               onEditMetrica={(label, valor) => handleEditMetrica(g.nombre, label, valor)}
               onEliminar={handleSolicitarEliminar}
               onTransferir={setTransfiriendo}
+              onCambiarMbp={setCambiandoMbp}
               soloLectura={soloLectura}
               esAdmin={esAdmin}
             />
@@ -2207,6 +2329,23 @@ export function ListaCorreos({
             pending={transferirPending}
             onTransferir={handleTransferir}
             onCancelar={() => setTransfiriendo(null)}
+          />,
+          document.body,
+        )}
+
+      {cambiandoMbp &&
+        createPortal(
+          <ModalCambiarMBP
+            grupoNombre={cambiandoMbp.grupoNombre}
+            hojaActualId={cambiandoMbp.hojaId}
+            todasHojas={todasHojas}
+            pending={cambiandoMbpPending}
+            error={errorCambiarMbp}
+            onConfirmar={handleCambiarMbp}
+            onCancelar={() => {
+              setCambiandoMbp(null);
+              setErrorCambiarMbp(null);
+            }}
           />,
           document.body,
         )}

@@ -17,6 +17,7 @@ import {
   guardarSolicitud,
   leerEdicionCorreo,
   leerEdicionesCorreos,
+  leerGruposExtra,
   leerHojasExtra,
   leerMiembrosExtra,
   leerPlataformas,
@@ -59,9 +60,14 @@ function fechaHoyChile(): string {
 }
 
 interface AsesorEstaticoRaw {
+  nombre: string;
   correo: string;
+  jira?: boolean;
+  slack?: boolean;
+  sf?: string;
 }
 interface GrupoEstaticoRaw {
+  nombre: string;
   asesores: AsesorEstaticoRaw[];
 }
 interface HojaEstaticaRaw {
@@ -597,6 +603,71 @@ export async function transferirCorreoAction(
     etiquetaHojaGrupo(targetHojaId, targetGrupoNombre),
   ]);
   await registrarHistorial(correo, 'mbp_bp', origenLabel, destinoLabel, sesion.email);
+
+  revalidatePath('/');
+}
+
+export async function transferirGrupoAction(
+  hojaId: string,
+  grupoNombre: string,
+  extraId: string | undefined,
+  targetHojaId: string,
+): Promise<void> {
+  const sesion = await getSesion();
+  if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
+  if (hojaId === targetHojaId) throw new Error('Elige un MBP distinto al actual.');
+
+  const [edits, miembrosExtra, gruposExtraDestino] = await Promise.all([
+    leerEdicionesCorreos(),
+    leerMiembrosExtra(),
+    leerGruposExtra(),
+  ]);
+
+  const existeGrupoEnDestino =
+    hojasEstaticas.some(
+      (h) => h.id === targetHojaId && h.grupos.some((g) => g.nombre === grupoNombre),
+    ) || gruposExtraDestino.some((g) => g.hojaId === targetHojaId && g.nombre === grupoNombre);
+
+  if (!existeGrupoEnDestino) {
+    await crearGrupoExtra(targetHojaId, grupoNombre);
+  }
+
+  const [origenLabel, destinoLabel] = await Promise.all([
+    etiquetaHojaGrupo(hojaId, grupoNombre),
+    etiquetaHojaGrupo(targetHojaId, grupoNombre),
+  ]);
+
+  const hojaEstatica = hojasEstaticas.find((h) => h.id === hojaId);
+  const grupoEstatico = hojaEstatica?.grupos.find((g) => g.nombre === grupoNombre);
+
+  if (grupoEstatico) {
+    for (const a of grupoEstatico.asesores) {
+      const eliminado = edits[`${a.correo}||eliminado`] === 'true';
+      const transferido = edits[`${a.correo}||transferido`] === 'true';
+      if (eliminado || transferido) continue;
+      const nombre = edits[`${a.correo}||nombre`] ?? a.nombre;
+      const jira = (edits[`${a.correo}||jira`] ?? (a.jira ? 'true' : 'false')) === 'true';
+      const slack = (edits[`${a.correo}||slack`] ?? (a.slack ? 'true' : 'false')) === 'true';
+      const sf = edits[`${a.correo}||sf`] ?? a.sf ?? '';
+      await guardarEdicionCorreo(a.correo, 'transferido', 'true');
+      await crearMiembroExtraSiNoExiste(targetHojaId, grupoNombre, nombre, a.correo, slack, jira, sf);
+      await registrarHistorial(a.correo, 'mbp_bp', origenLabel, destinoLabel, sesion.email);
+    }
+  }
+
+  const miembrosDelGrupo = miembrosExtra.filter(
+    (m) => m.hojaId === hojaId && m.grupoNombre === grupoNombre,
+  );
+  for (const m of miembrosDelGrupo) {
+    await transferirMiembroExtra(m.correo, targetHojaId, grupoNombre);
+    await registrarHistorial(m.correo, 'mbp_bp', origenLabel, destinoLabel, sesion.email);
+  }
+
+  if (extraId) {
+    await eliminarGrupoExtra(extraId);
+  } else if (grupoEstatico) {
+    await ocultarGrupo(hojaId, grupoNombre);
+  }
 
   revalidatePath('/');
 }
