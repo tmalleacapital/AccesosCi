@@ -254,6 +254,12 @@ export function SolicitudesList({
         tabs={grupos.map((grupo) => ({
           id: grupo.tipo,
           label: GRUPO_TITULO[grupo.tipo],
+          badge: grupo.solicitudes.filter(
+            (s) =>
+              s.estado === 'pendiente' ||
+              s.estado === 'esperando_salesforce' ||
+              s.estado === 'esperando_jira',
+          ).length,
           content:
             grupo.solicitudes.length === 0 ? (
               <EstadoVacio mensaje="No hay solicitudes de este tipo." />
