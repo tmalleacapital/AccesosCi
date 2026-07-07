@@ -23,6 +23,7 @@ import {
   leerPlataformas,
   leerSolicitudes,
   leerUsuarios,
+  moverGrupoBpUsuarios,
   registrarHistorial,
   SolicitudIdDuplicadoError,
   transferirMiembroExtra,
@@ -668,6 +669,10 @@ export async function transferirGrupoAction(
   } else if (grupoEstatico) {
     await ocultarGrupo(hojaId, grupoNombre);
   }
+
+  // Si algún usuario BP tenía su acceso apuntando a este grupo en el MBP
+  // anterior, hay que moverlo junto con el grupo o pierde su propio acceso.
+  await moverGrupoBpUsuarios(`${hojaId}|${grupoNombre}`, `${targetHojaId}|${grupoNombre}`);
 
   revalidatePath('/');
 }

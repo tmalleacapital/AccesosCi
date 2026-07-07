@@ -76,6 +76,18 @@ export async function actualizarRolUsuario(
   if (error) throw new Error(`actualizarRolUsuario: ${error.message}`);
 }
 
+/** Actualiza el grupo_bp de cualquier usuario que apuntaba al BP movido, para que no pierda acceso a su propio grupo. */
+export async function moverGrupoBpUsuarios(
+  grupoBpAnterior: string,
+  grupoBpNuevo: string,
+): Promise<void> {
+  const { error } = await getSupabase()
+    .from('usuarios')
+    .update({ grupo_bp: grupoBpNuevo })
+    .eq('grupo_bp', grupoBpAnterior);
+  if (error) throw new Error(`moverGrupoBpUsuarios: ${error.message}`);
+}
+
 export async function eliminarUsuario(email: string): Promise<void> {
   const { error } = await getSupabase().from('usuarios').delete().eq('email', email);
   if (error) throw new Error(`eliminarUsuario: ${error.message}`);
