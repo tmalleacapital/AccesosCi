@@ -87,8 +87,14 @@ export default async function Home({
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white">
-              <Image src="/logo.png" alt="Logo" width={1080} height={1350} className="h-8 w-8 object-contain" />
+            <div className="h-10 w-10 shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={1080}
+                height={1350}
+                className="h-10 w-10 object-contain invert dark:invert-0"
+              />
             </div>
             <div>
               <h1 className="text-lg font-semibold text-foreground">Solicitudes de Accesos</h1>

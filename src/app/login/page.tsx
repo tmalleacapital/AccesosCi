@@ -32,8 +32,14 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-full flex-1 items-center justify-center bg-background p-6">
       <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-sm">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-white">
-          <Image src="/logo.png" alt="Logo" width={1080} height={1350} className="h-12 w-12 object-contain" />
+        <div className="mx-auto mb-4 h-16 w-16">
+          <Image
+            src="/logo.png"
+            alt="Logo"
+            width={1080}
+            height={1350}
+            className="h-16 w-16 object-contain invert dark:invert-0"
+          />
         </div>
         <h1 className="text-xl font-semibold text-foreground">Solicitudes de Accesos</h1>
         <p className="mt-1 text-sm text-muted-foreground">
