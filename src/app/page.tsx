@@ -156,7 +156,6 @@ export default async function Home({
               content: (
                 <SolicitudForm
                   plataformas={plataformasActivas}
-                  esAdmin={esAdmin}
                   esMultiempresas={esMultiempresas}
                   empresaInicial={empresaActiva}
                 />

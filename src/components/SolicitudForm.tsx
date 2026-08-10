@@ -49,12 +49,10 @@ function formatearRut(value: string): string {
 
 export function SolicitudForm({
   plataformas,
-  esAdmin = false,
   esMultiempresas = false,
   empresaInicial = EMPRESA_DEFAULT,
 }: {
   plataformas: Plataforma[];
-  esAdmin?: boolean;
   esMultiempresas?: boolean;
   /** Empresa activa en el switcher del header (admin/finanzas); arranca el selector sincronizado con ella. */
   empresaInicial?: EmpresaId;
@@ -171,12 +169,6 @@ export function SolicitudForm({
         <legend className="text-sm font-medium text-foreground">Plataformas</legend>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           {plataformas
-            .filter(
-              (p) =>
-                esAdmin ||
-                tipo === 'baja' ||
-                (p.id !== 'salesforce' && p.id !== 'slack'),
-            )
             .map((p) => (
             <label
               key={p.id}
