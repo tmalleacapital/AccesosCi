@@ -28,6 +28,12 @@ function validarRut(rut: string): boolean {
   return dv === dvEsperado;
 }
 
+function nombrePlataformaParaEmpresa(nombre: string, dominioActivo: string): string {
+  // Los nombres de plataforma (ej. "Gmail @capitalinteligente.cl") son
+  // globales; se muestra el dominio de la empresa seleccionada.
+  return nombre.replace(EMPRESAS.capital_inteligente.dominio, dominioActivo);
+}
+
 function formatearRut(value: string): string {
   const clean = value
     .replace(/\./g, '')
@@ -175,7 +181,7 @@ export function SolicitudForm({
               className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
             >
               <input type="checkbox" name="plataformas" value={p.id} />
-              {p.nombre}
+              {nombrePlataformaParaEmpresa(p.nombre, dominioActivo)}
             </label>
           ))}
         </div>
