@@ -61,7 +61,7 @@ const ESTADO_ESTILO: Record<EstadoSolicitud, string> = {
 const ESTADO_LABEL: Record<EstadoSolicitud, string> = {
   pendiente: 'Pendiente',
   en_proceso: 'En proceso',
-  esperando_salesforce: 'Esperando Salesforce',
+  esperando_salesforce: 'Esperando Nodia',
   esperando_jira: 'Esperando Jira',
   completada: 'Completada',
   rechazada: 'Rechazada',
@@ -172,7 +172,7 @@ function DatosSolicitudResumen({ solicitud }: { solicitud: Solicitud }) {
       </div>
       {d.redistribucionSalesforce && (
         <div className="flex gap-2">
-          <dt className="text-muted-foreground shrink-0">Redistribución Salesforce</dt>
+          <dt className="text-muted-foreground shrink-0">Redistribución Nodia</dt>
           <dd className="text-foreground">{d.redistribucionSalesforce}</dd>
         </div>
       )}
@@ -316,19 +316,15 @@ function SolicitudCard({
   const estadoActivo = s.estado !== 'completada' && s.estado !== 'rechazada';
 
   const idsAccesos = new Set(s.accesos.map((a) => a.plataformaId));
-  const tieneSalesforce = plataformas.some(
-    (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('salesforce'),
-  );
+  const tieneSalesforce = plataformas.some((p) => idsAccesos.has(p.id) && p.id === 'salesforce');
   const tieneJira = plataformas.some(
     (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('jira'),
   );
   const tieneGmail = plataformas.some(
     (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('gmail'),
   );
-  const tieneSlack = plataformas.some(
-    (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('slack'),
-  );
-  const platsPaso1Baja = [tieneGmail && 'Gmail', tieneSlack && 'Slack'].filter(Boolean).join('/');
+  const tieneSlack = plataformas.some((p) => idsAccesos.has(p.id) && p.id === 'slack');
+  const platsPaso1Baja = [tieneGmail && 'Gmail', tieneSlack && 'Hubix'].filter(Boolean).join('/');
 
   // Próximo estado cuando tmallea completa paso 1
   const nextEstado: EstadoSolicitud = tieneSalesforce
@@ -432,7 +428,7 @@ function SolicitudCard({
                 <span className="font-mono font-medium text-foreground">
                   {s.correoCorporativoAsignado}
                 </span>
-                . Marca el ticket como completado una vez creada la cuenta en Salesforce.
+                . Marca el ticket como completado una vez creada la cuenta en Nodia.
               </p>
               <BotonEstado id={s.id} estado="completada" label="Completar ticket" />
             </div>

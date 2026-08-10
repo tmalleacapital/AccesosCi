@@ -975,9 +975,9 @@ function calcularResumenCostos(grupos: Grupo[], edits: Record<string, string>, e
   const plataformas = [
     { label: 'Google Workspace', count: countGoogle, precio: PRECIOS.google },
     { label: 'Jira', count: countJira, precio: PRECIOS.jira },
-    { label: 'Slack', count: countSlack, precio: PRECIOS.slack },
-    { label: 'Salesforce Cloud', count: countSfCloud, precio: PRECIOS.sfCloud },
-    { label: 'Salesforce Portal', count: countSfPortal, precio: PRECIOS.sfPortal },
+    { label: 'Hubix', count: countSlack, precio: PRECIOS.slack },
+    { label: 'Nodia Cloud', count: countSfCloud, precio: PRECIOS.sfCloud },
+    { label: 'Nodia Portal', count: countSfPortal, precio: PRECIOS.sfPortal },
   ].map((p) => ({ ...p, subtotal: p.count * p.precio }));
 
   const total = plataformas.reduce((n, p) => n + p.subtotal, 0);
@@ -1205,10 +1205,10 @@ function TablaGrupo({
                 <th className="w-10 px-3 py-2 text-center font-semibold text-foreground">Jira</th>
               )}
               {columnas.slack && (
-                <th className="w-10 px-3 py-2 text-center font-semibold text-foreground">Slack</th>
+                <th className="w-10 px-3 py-2 text-center font-semibold text-foreground">Hubix</th>
               )}
               {columnas.sf && (
-                <th className="w-[95px] px-3 py-2 font-semibold text-foreground">Salesforce</th>
+                <th className="w-[95px] px-3 py-2 font-semibold text-foreground">Nodia</th>
               )}
               {columnas.fecha && (
                 <th className="w-[130px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
@@ -1450,7 +1450,7 @@ function ModalAgregarCorreo({
             </label>
             <label className="flex items-center gap-1.5">
               <input type="checkbox" checked={slack} onChange={(e) => setSlack(e.target.checked)} disabled={pending} />
-              Slack
+              Hubix
             </label>
             <select
               value={sf}
@@ -1458,9 +1458,9 @@ function ModalAgregarCorreo({
               disabled={pending}
               className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground disabled:opacity-40"
             >
-              <option value="">Salesforce: —</option>
-              <option value="Portal">Salesforce: Portal</option>
-              <option value="Cloud">Salesforce: Cloud</option>
+              <option value="">Nodia: —</option>
+              <option value="Portal">Nodia: Portal</option>
+              <option value="Cloud">Nodia: Cloud</option>
             </select>
           </div>
           {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}

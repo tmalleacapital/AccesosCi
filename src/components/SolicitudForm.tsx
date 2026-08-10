@@ -160,7 +160,7 @@ export function SolicitudForm({
             name="correoCorporativo"
           />
           <Campo
-            label="Si tiene Salesforce: ¿a quién se redistribuyen leads y cuentas?"
+            label="Si tiene Nodia: ¿a quién se redistribuyen leads y cuentas?"
             name="redistribucionSalesforce"
             required={false}
           />
@@ -175,8 +175,7 @@ export function SolicitudForm({
               (p) =>
                 esAdmin ||
                 tipo === 'baja' ||
-                (!p.nombre.toLowerCase().includes('salesforce') &&
-                  !p.nombre.toLowerCase().includes('slack')),
+                (p.id !== 'salesforce' && p.id !== 'slack'),
             )
             .map((p) => (
             <label

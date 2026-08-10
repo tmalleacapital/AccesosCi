@@ -510,7 +510,7 @@ export async function cambiarEstadoAction(formData: FormData) {
         .filter(Boolean)
         .join(' ');
       const tieneSlack = plataformas.some(
-        (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('slack'),
+        (p) => idsAccesos.has(p.id) && p.id === 'slack',
       );
       await crearMiembroExtraSiNoExiste(
         bpHojaId,
@@ -649,7 +649,7 @@ export async function cambiarEstadoAction(formData: FormData) {
         .filter(Boolean)
         .join(' ');
       const tieneSlack = plataformas.some(
-        (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('slack'),
+        (p) => idsAccesos.has(p.id) && p.id === 'slack',
       );
       const tieneJira = plataformas.some(
         (p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes('jira'),

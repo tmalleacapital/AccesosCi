@@ -188,7 +188,7 @@ export function CompletarCreacionForm({
                       : 'border-border bg-muted text-muted-foreground/50 line-through'
                   }`}
                 >
-                  Slack
+                  Hubix
                 </span>
                 <span
                   className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${

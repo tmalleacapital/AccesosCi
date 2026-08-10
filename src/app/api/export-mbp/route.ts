@@ -81,9 +81,9 @@ function escribirGrupo(
 
   // Cabecera columnas
   const hdr = ws.addRow([
-    'Nombre', 'Correo', 'Estado', 'Jira', 'Slack', 'Salesforce', 'Fecha Baja',
+    'Nombre', 'Correo', 'Estado', 'Jira', 'Hubix', 'Nodia', 'Fecha Baja',
     '', '',
-    'Google Workspace (USD)', 'Jira (USD)', 'Slack (USD)', 'Salesforce (USD)', 'Total (USD)',
+    'Google Workspace (USD)', 'Jira (USD)', 'Hubix (USD)', 'Nodia (USD)', 'Total (USD)',
   ]);
   hdr.height = 18;
   hdr.eachCell((cell, col) => {

@@ -76,7 +76,7 @@ function bloqueDatosHtml(solicitud: Solicitud): string {
   const d = solicitud.datos as DatosBaja;
   return filas([
     ['Correo corporativo', d.correoCorporativo],
-    ['Redistribución Salesforce', d.redistribucionSalesforce],
+    ['Redistribución Nodia', d.redistribucionSalesforce],
   ]);
 }
 
@@ -250,12 +250,12 @@ export function construirCorreoParaSalesforce(
     const d = solicitud.datos as DatosBaja;
     return {
       to: RESPONSABLE_SALESFORCE,
-      subject: `[Pendiente Salesforce] Ticket ${solicitud.id}`,
+      subject: `[Pendiente Nodia] Ticket ${solicitud.id}`,
       body: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#111">
-          <h2 style="margin-bottom:4px">Paso 2: Eliminar cuenta en Salesforce</h2>
+          <h2 style="margin-bottom:4px">Paso 2: Eliminar cuenta en Nodia</h2>
           <p style="color:#888;margin-top:0">Ticket <strong>${solicitud.id}</strong> · ${etiqueta}</p>
-          <p>Gmail y Slack ya fueron dados de baja. Por favor elimina la cuenta en Salesforce y luego marca el ticket como completado en el sistema.</p>
+          <p>Gmail y Hubix ya fueron dados de baja. Por favor elimina la cuenta en Nodia y luego marca el ticket como completado en el sistema.</p>
 
           <table style="width:100%;border-collapse:collapse;margin-top:16px;background:#fef2f2;border-radius:8px;overflow:hidden;border:1px solid #fecaca">
             <thead>
@@ -290,12 +290,12 @@ export function construirCorreoParaSalesforce(
 
   return {
     to: RESPONSABLE_SALESFORCE,
-    subject: `[Pendiente Salesforce] Ticket ${solicitud.id}`,
+    subject: `[Pendiente Nodia] Ticket ${solicitud.id}`,
     body: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#111">
-        <h2 style="margin-bottom:4px">Paso 2: Crear cuenta en Salesforce</h2>
+        <h2 style="margin-bottom:4px">Paso 2: Crear cuenta en Nodia</h2>
         <p style="color:#888;margin-top:0">Ticket <strong>${solicitud.id}</strong> · ${etiqueta}</p>
-        <p>El correo corporativo fue creado. Por favor crea la cuenta en Salesforce y luego marca el ticket como completado en el sistema.</p>
+        <p>El correo corporativo fue creado. Por favor crea la cuenta en Nodia y luego marca el ticket como completado en el sistema.</p>
 
         <table style="width:100%;border-collapse:collapse;margin-top:16px;background:#f0fdf4;border-radius:8px;overflow:hidden;border:1px solid #bbf7d0">
           <thead>
@@ -349,7 +349,7 @@ export function construirCorreoParaJira(
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#111">
           <h2 style="margin-bottom:4px">Paso 3: Eliminar cuenta en Jira</h2>
           <p style="color:#888;margin-top:0">Ticket <strong>${solicitud.id}</strong> · ${etiqueta}</p>
-          <p>Gmail y Slack (y Salesforce, si aplicaba) ya fueron dados de baja. Por favor elimina la cuenta en Jira y luego marca el ticket como completado en el sistema.</p>
+          <p>Gmail y Hubix (y Nodia, si aplicaba) ya fueron dados de baja. Por favor elimina la cuenta en Jira y luego marca el ticket como completado en el sistema.</p>
 
           <table style="width:100%;border-collapse:collapse;margin-top:16px;background:#fef2f2;border-radius:8px;overflow:hidden;border:1px solid #fecaca">
             <thead>
