@@ -1205,7 +1205,9 @@ function TablaGrupo({
                 <th className="w-10 px-3 py-2 text-center font-semibold text-foreground">Jira</th>
               )}
               {columnas.slack && (
-                <th className="w-10 px-3 py-2 text-center font-semibold text-foreground">Hubix</th>
+                <th className="w-16 whitespace-nowrap px-3 py-2 text-center font-semibold text-foreground">
+                  Hubix
+                </th>
               )}
               {columnas.sf && (
                 <th className="w-[95px] px-3 py-2 font-semibold text-foreground">Nodia</th>
