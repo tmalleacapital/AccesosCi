@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 import { cambiarEstadoAction } from '@/app/actions';
 import correosData from '@/data/correos.json';
 import type { GrupoExtra, HojaExtra } from '@/lib/db';
-import type { EstadoSolicitud } from '@/types';
+import type { EmpresaId, EstadoSolicitud } from '@/types';
+import { EMPRESAS, EMPRESA_DEFAULT } from '@/lib/empresas';
 import { BotonSubmit } from '@/components/BotonSubmit';
 
 interface AsesorRaw {
@@ -33,15 +34,25 @@ interface BPOption {
   isDynamic: boolean;
 }
 
-function buildBPOptions(gruposExtra: GrupoExtra[], hojasExtra: HojaExtra[]): BPOption[] {
+function buildBPOptions(
+  gruposExtra: GrupoExtra[],
+  hojasExtra: HojaExtra[],
+  empresa: EmpresaId,
+): BPOption[] {
   const options: BPOption[] = [];
+
+  // Las hojas estáticas (correos.json) son siempre Capital Inteligente; las
+  // dinámicas se filtran por la empresa de la solicitud, para no ofrecer BPs
+  // de otra empresa al asignar.
+  const hojasEstaticas = empresa === 'capital_inteligente' ? data.hojas : [];
+  const hojasDinamicas = hojasExtra.filter((h) => h.empresa === empresa);
 
   // Todas las hojas (MBP), estaticas primero y luego las creadas dinamicamente
   // que no tengan ya una entrada estatica, para que cada BP quede agrupado
   // junto a los demas de su mismo MBP.
   const todasHojas = [
-    ...data.hojas.map((h) => ({ id: h.id, nombre: h.nombre })),
-    ...hojasExtra.filter((h) => !data.hojas.some((he) => he.id === h.id)),
+    ...hojasEstaticas.map((h) => ({ id: h.id, nombre: h.nombre })),
+    ...hojasDinamicas.filter((h) => !hojasEstaticas.some((he) => he.id === h.id)),
   ];
 
   for (const hoja of todasHojas) {
@@ -81,15 +92,20 @@ export function CompletarCreacionForm({
   hojasExtra = [],
   nextEstado = 'completada',
   tieneGmail = true,
+  empresa = EMPRESA_DEFAULT,
 }: {
   id: string;
   gruposExtra?: GrupoExtra[];
   hojasExtra?: HojaExtra[];
   nextEstado?: EstadoSolicitud;
   tieneGmail?: boolean;
+  empresa?: EmpresaId;
 }) {
   const [bpKey, setBpKey] = useState('');
-  const bpOptions = useMemo(() => buildBPOptions(gruposExtra, hojasExtra), [gruposExtra, hojasExtra]);
+  const bpOptions = useMemo(
+    () => buildBPOptions(gruposExtra, hojasExtra, empresa),
+    [gruposExtra, hojasExtra, empresa],
+  );
   const selectedBP = bpOptions.find((bp) => bp.key === bpKey);
 
   const bpHojaId = useMemo(() => {
@@ -122,7 +138,7 @@ export function CompletarCreacionForm({
                 name="correoCorporativoAsignado"
                 type="email"
                 required
-                placeholder="usuario@capitalinteligente.cl"
+                placeholder={`usuario@${EMPRESAS[empresa].dominio}`}
                 className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-mono text-foreground outline-none focus:border-primary"
               />
             </div>

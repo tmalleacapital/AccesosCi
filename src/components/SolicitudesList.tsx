@@ -5,6 +5,7 @@ import type {
   DatosBaja,
   DatosCreacion,
   DatosModificacion,
+  EmpresaId,
   EstadoSolicitud,
   Plataforma,
   Solicitud,
@@ -13,6 +14,7 @@ import type {
 } from '@/types';
 import { cambiarEstadoAction } from '@/app/actions';
 import { agruparPorTipo } from '@/lib/services/solicitudes.service';
+import { EMPRESAS } from '@/lib/empresas';
 import { DashboardTabs } from '@/components/DashboardTabs';
 import { CompletarCreacionForm } from '@/components/CompletarCreacionForm';
 import { BotonSubmit } from '@/components/BotonSubmit';
@@ -102,8 +104,11 @@ function EstadoVacio({ mensaje }: { mensaje: string }) {
   );
 }
 
-function nombrePlataforma(id: string, plataformas: Plataforma[]): string {
-  return plataformas.find((p) => p.id === id)?.nombre ?? id;
+function nombrePlataforma(id: string, plataformas: Plataforma[], empresa: EmpresaId): string {
+  const nombre = plataformas.find((p) => p.id === id)?.nombre ?? id;
+  // Los nombres de plataforma (ej. "Gmail @capitalinteligente.cl") son
+  // globales; se muestra el dominio de la empresa de la solicitud.
+  return nombre.replace(EMPRESAS.capital_inteligente.dominio, EMPRESAS[empresa].dominio);
 }
 
 function fmtFecha(iso: string): string {
@@ -399,7 +404,7 @@ function SolicitudCard({
                 className="rounded-md border border-border bg-background px-2 py-0.5 text-xs text-foreground"
                 title={`Solicitado: ${fmtFecha(a.fechaSolicitud)}`}
               >
-                {nombrePlataforma(a.plataformaId, plataformas)}
+                {nombrePlataforma(a.plataformaId, plataformas, s.empresa)}
               </span>
             ))}
           </div>
@@ -456,6 +461,7 @@ function SolicitudCard({
                 hojasExtra={hojasExtra}
                 nextEstado={nextEstado}
                 tieneGmail={tieneGmail}
+                empresa={s.empresa}
               />
               <div className="flex gap-2 border-t border-border/50 pt-2">
                 <BotonEstado id={s.id} estado="en_proceso" label="Marcar en proceso" />
