@@ -51,14 +51,17 @@ export function SolicitudForm({
   plataformas,
   esAdmin = false,
   esMultiempresas = false,
+  empresaInicial = EMPRESA_DEFAULT,
 }: {
   plataformas: Plataforma[];
   esAdmin?: boolean;
   esMultiempresas?: boolean;
+  /** Empresa activa en el switcher del header (admin/finanzas); arranca el selector sincronizado con ella. */
+  empresaInicial?: EmpresaId;
 }) {
   const [estado, formAction, pending] = useActionState(crearSolicitudAction, estadoInicial);
   const [tipo, setTipo] = useState<TipoSolicitud>('crear');
-  const [empresa, setEmpresa] = useState<EmpresaId>(EMPRESA_DEFAULT);
+  const [empresa, setEmpresa] = useState<EmpresaId>(empresaInicial);
   const [rut, setRut] = useState('');
   const [rutError, setRutError] = useState('');
   const dominioActivo = EMPRESAS[esMultiempresas ? empresa : EMPRESA_DEFAULT].dominio;

@@ -158,6 +158,7 @@ export default async function Home({
                   plataformas={plataformasActivas}
                   esAdmin={esAdmin}
                   esMultiempresas={esMultiempresas}
+                  empresaInicial={empresaActiva}
                 />
               ),
             },
