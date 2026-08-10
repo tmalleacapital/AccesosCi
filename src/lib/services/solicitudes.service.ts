@@ -4,12 +4,14 @@ import type {
   DatosCreacion,
   DatosModificacion,
   DatosSolicitud,
+  EmpresaId,
   EstadoSolicitud,
   PersonaDirectorio,
   Solicitud,
   TipoSolicitud,
 } from '@/types';
 import { esCorreoCorporativo } from './auth.service';
+import { EMPRESAS, EMPRESA_DEFAULT } from '@/lib/empresas';
 
 export interface NuevaSolicitudInput {
   tipo: TipoSolicitud;
@@ -17,6 +19,8 @@ export interface NuevaSolicitudInput {
   datos: DatosSolicitud;
   plataformaIds: string[];
   comentario?: string;
+  /** Empresa para la que se pide el acceso. Por defecto capital_inteligente. */
+  empresa?: EmpresaId;
 }
 
 export interface SolicitudDeps {
@@ -63,6 +67,14 @@ export function validarEntradaSolicitud(input: NuevaSolicitudInput): string[] {
     }
   }
 
+  if (input.tipo === 'modificar' || input.tipo === 'baja') {
+    const d = input.datos as DatosModificacion | DatosBaja;
+    const empresa = EMPRESAS[input.empresa ?? EMPRESA_DEFAULT];
+    if (!esVacio(d.correoCorporativo) && !d.correoCorporativo.toLowerCase().endsWith(`@${empresa.dominio}`)) {
+      errores.push(`El correo corporativo debe ser @${empresa.dominio} para ${empresa.nombre}.`);
+    }
+  }
+
   return errores;
 }
 
@@ -85,6 +97,7 @@ export function crearSolicitud(input: NuevaSolicitudInput, deps: SolicitudDeps):
     solicitanteEmail: input.solicitanteEmail.trim().toLowerCase(),
     fechaCreacion: fecha,
     estado: 'pendiente',
+    empresa: input.empresa ?? EMPRESA_DEFAULT,
     datos: input.datos,
     accesos,
     ...(input.comentario?.trim() ? { comentario: input.comentario.trim() } : {}),

@@ -31,6 +31,7 @@ import {
 import correosData from '@/data/correos.json';
 import { clearSesion, getSesion, setSesion } from '@/lib/session';
 import { esCorreoCorporativo } from '@/lib/services/auth.service';
+import { EMPRESA_DEFAULT, esEmpresaId } from '@/lib/empresas';
 import { generarOtp, guardarOtp, limpiarOtp, verificarOtp } from '@/lib/services/otp.service';
 import { enviarCodigoOtp, enviarCorreo } from '@/lib/services/email.service';
 import {
@@ -53,6 +54,7 @@ import type {
   DatosBaja,
   DatosCreacion,
   DatosSolicitud,
+  EmpresaId,
   EstadoSolicitud,
   Plataforma,
   Rol,
@@ -219,7 +221,7 @@ export async function solicitarCodigoAction(_prev: unknown, formData: FormData) 
   const usuarios = await leerUsuarios();
   const usuario = usuarios.find((u) => u.email.toLowerCase() === email);
   const rol = usuario?.rol ?? 'solicitante';
-  if (rol !== 'bp' && rol !== 'admin' && rol !== 'finanzas') {
+  if (rol !== 'bp' && rol !== 'admin' && rol !== 'finanzas' && usuario?.multiempresas !== true) {
     return { error: 'No tienes acceso a esta plataforma.' };
   }
 
@@ -252,13 +254,20 @@ export async function verificarCodigoAction(_prev: unknown, formData: FormData) 
   const nombre = usuario?.nombre ?? email.split('@')[0];
   const rol = usuario?.rol ?? 'solicitante';
   const grupoBp = usuario?.grupoBp;
+  const multiempresas = usuario?.multiempresas === true;
 
-  if (rol !== 'bp' && rol !== 'admin' && rol !== 'finanzas') {
+  if (rol !== 'bp' && rol !== 'admin' && rol !== 'finanzas' && !multiempresas) {
     return { error: 'No tienes acceso a esta plataforma.', email };
   }
 
   await limpiarOtp();
-  await setSesion({ email, nombre, rol, ...(grupoBp ? { grupoBp } : {}) });
+  await setSesion({
+    email,
+    nombre,
+    rol,
+    ...(grupoBp ? { grupoBp } : {}),
+    ...(multiempresas ? { multiempresas } : {}),
+  });
   redirect('/');
 }
 
@@ -299,6 +308,12 @@ export async function crearSolicitudAction(_prev: unknown, formData: FormData) {
 
   const comentario = String(formData.get('comentario') ?? '').trim() || undefined;
 
+  const empresaSolicitada = String(formData.get('empresa') ?? '').trim();
+  const empresa =
+    sesion.multiempresas === true && esEmpresaId(empresaSolicitada)
+      ? empresaSolicitada
+      : EMPRESA_DEFAULT;
+
   const PREFIJO: Record<string, string> = { crear: 'CREA', modificar: 'MOD', baja: 'ELIM' };
 
   const input: NuevaSolicitudInput = {
@@ -307,6 +322,7 @@ export async function crearSolicitudAction(_prev: unknown, formData: FormData) {
     datos,
     plataformaIds,
     comentario,
+    empresa,
   };
 
   const errores = validarEntradaSolicitud(input);
@@ -382,11 +398,11 @@ export async function restaurarCorreoAction(correo: string): Promise<void> {
   revalidatePath('/');
 }
 
-export async function crearHojaAction(nombre: string): Promise<void> {
+export async function crearHojaAction(nombre: string, empresa: EmpresaId): Promise<void> {
   const sesion = await getSesion();
   if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
   if (!nombre.trim()) throw new Error('El nombre del MBP no puede estar vacío.');
-  await crearHojaExtra(nombre.trim());
+  await crearHojaExtra(nombre.trim(), empresa);
   revalidatePath('/');
 }
 
@@ -769,6 +785,7 @@ export async function crearUsuarioAction(
   nombre: string,
   rol: Rol,
   grupoBp?: string,
+  multiempresas?: boolean,
 ): Promise<{ error?: string }> {
   const sesion = await getSesion();
   if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
@@ -781,7 +798,7 @@ export async function crearUsuarioAction(
     return { error: 'El nombre no puede estar vacío.' };
   }
 
-  await crearUsuario(correo, nombre.trim(), rol, grupoBp?.trim() || undefined);
+  await crearUsuario(correo, nombre.trim(), rol, grupoBp?.trim() || undefined, multiempresas);
   revalidatePath('/');
   return {};
 }
@@ -790,10 +807,11 @@ export async function actualizarRolUsuarioAction(
   email: string,
   rol: Rol,
   grupoBp?: string,
+  multiempresas?: boolean,
 ): Promise<void> {
   const sesion = await getSesion();
   if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
-  await actualizarRolUsuario(email.trim().toLowerCase(), rol, grupoBp?.trim() || undefined);
+  await actualizarRolUsuario(email.trim().toLowerCase(), rol, grupoBp?.trim() || undefined, multiempresas);
   revalidatePath('/');
 }
 

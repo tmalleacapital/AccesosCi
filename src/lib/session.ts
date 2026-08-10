@@ -10,6 +10,7 @@ export interface Sesion {
   nombre: string;
   rol: Rol;
   grupoBp?: string;
+  multiempresas?: boolean;
 }
 
 function firmar(payload: string): string {

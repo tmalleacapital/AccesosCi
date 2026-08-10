@@ -2,6 +2,9 @@
 
 export type Rol = 'solicitante' | 'equipo' | 'admin' | 'bp' | 'finanzas';
 
+/** Empresa a la que pertenece una solicitud/hoja (ver src/lib/empresas.ts). */
+export type EmpresaId = 'capital_inteligente' | 'capital_prime';
+
 export interface Usuario {
   email: string; // siempre @capitalinteligente.cl
   nombre: string;
@@ -10,6 +13,8 @@ export interface Usuario {
   passwordHash: string;
   // Para BPs: "hojaId|grupoNombre" — grupo que pueden ver en Lista de correos.
   grupoBp?: string;
+  /** Puede operar (ver/solicitar) en más de una empresa, independiente de `rol`. */
+  multiempresas?: boolean;
 }
 
 export interface Plataforma {
@@ -74,6 +79,8 @@ export interface Solicitud {
   solicitanteEmail: string;
   fechaCreacion: string; // ISO
   estado: EstadoSolicitud;
+  /** Empresa para la que se pide el acceso. Por defecto capital_inteligente. */
+  empresa: EmpresaId;
   datos: DatosSolicitud;
   accesos: AccesoSolicitado[];
   comentario?: string;

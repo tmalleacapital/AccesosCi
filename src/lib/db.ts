@@ -1,6 +1,6 @@
 import 'server-only';
 import { createClient } from '@supabase/supabase-js';
-import type { Plataforma, Solicitud, Usuario } from '@/types';
+import type { EmpresaId, Plataforma, Solicitud, Usuario } from '@/types';
 
 function getSupabase() {
   return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -17,6 +17,7 @@ interface SolicitudRow {
   accesos: unknown;
   comentario: string | null;
   correo_corporativo_asignado: string | null;
+  empresa: string | null;
 }
 
 function rowToSolicitud(row: SolicitudRow): Solicitud {
@@ -26,6 +27,7 @@ function rowToSolicitud(row: SolicitudRow): Solicitud {
     solicitanteEmail: row.solicitante_email,
     fechaCreacion: row.fecha_creacion,
     estado: row.estado as Solicitud['estado'],
+    empresa: (row.empresa as Solicitud['empresa']) ?? 'capital_inteligente',
     datos: row.datos as Solicitud['datos'],
     accesos: row.accesos as Solicitud['accesos'],
     ...(row.comentario ? { comentario: row.comentario } : {}),
@@ -38,13 +40,14 @@ function rowToSolicitud(row: SolicitudRow): Solicitud {
 export async function leerUsuarios(): Promise<Usuario[]> {
   const { data, error } = await getSupabase()
     .from('usuarios')
-    .select('email, nombre, rol, grupo_bp');
+    .select('email, nombre, rol, grupo_bp, multiempresas');
   if (error) throw new Error(`leerUsuarios: ${error.message}`);
   return (data ?? []).map((row) => ({
     email: row.email as string,
     nombre: row.nombre as string,
     rol: row.rol as Usuario['rol'],
     grupoBp: (row.grupo_bp as string | null) ?? undefined,
+    multiempresas: (row.multiempresas as boolean | null) ?? false,
     passwordHash: '',
   }));
 }
@@ -54,11 +57,12 @@ export async function crearUsuario(
   nombre: string,
   rol: Usuario['rol'],
   grupoBp?: string,
+  multiempresas?: boolean,
 ): Promise<void> {
   const { error } = await getSupabase()
     .from('usuarios')
     .upsert(
-      { email, nombre, rol, grupo_bp: grupoBp ?? null },
+      { email, nombre, rol, grupo_bp: grupoBp ?? null, multiempresas: multiempresas ?? false },
       { onConflict: 'email' },
     );
   if (error) throw new Error(`crearUsuario: ${error.message}`);
@@ -68,10 +72,11 @@ export async function actualizarRolUsuario(
   email: string,
   rol: Usuario['rol'],
   grupoBp?: string,
+  multiempresas?: boolean,
 ): Promise<void> {
   const { error } = await getSupabase()
     .from('usuarios')
-    .update({ rol, grupo_bp: grupoBp ?? null })
+    .update({ rol, grupo_bp: grupoBp ?? null, multiempresas: multiempresas ?? false })
     .eq('email', email);
   if (error) throw new Error(`actualizarRolUsuario: ${error.message}`);
 }
@@ -128,6 +133,7 @@ export async function guardarSolicitud(solicitud: Solicitud): Promise<void> {
       solicitante_email: solicitud.solicitanteEmail,
       fecha_creacion: solicitud.fechaCreacion,
       estado: solicitud.estado,
+      empresa: solicitud.empresa,
       datos: solicitud.datos,
       accesos: solicitud.accesos,
       comentario: solicitud.comentario ?? null,
@@ -186,22 +192,24 @@ export async function guardarEdicionCorreo(
 export interface HojaExtra {
   id: string;
   nombre: string;
+  empresa: EmpresaId;
 }
 
 export async function leerHojasExtra(): Promise<HojaExtra[]> {
   const { data, error } = await getSupabase()
     .from('hojas_extra')
-    .select('id, nombre')
+    .select('id, nombre, empresa')
     .order('created_at');
   if (error) throw new Error(`leerHojasExtra: ${error.message}`);
   return (data ?? []).map((row) => ({
     id: row.id as string,
     nombre: row.nombre as string,
+    empresa: (row.empresa as EmpresaId) ?? 'capital_inteligente',
   }));
 }
 
-export async function crearHojaExtra(nombre: string): Promise<void> {
-  const { error } = await getSupabase().from('hojas_extra').insert({ nombre });
+export async function crearHojaExtra(nombre: string, empresa: EmpresaId): Promise<void> {
+  const { error } = await getSupabase().from('hojas_extra').insert({ nombre, empresa });
   if (error) throw new Error(`crearHojaExtra: ${error.message}`);
 }
 

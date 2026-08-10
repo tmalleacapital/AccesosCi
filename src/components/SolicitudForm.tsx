@@ -1,9 +1,10 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import type { Plataforma, TipoSolicitud } from '@/types';
+import type { EmpresaId, Plataforma, TipoSolicitud } from '@/types';
 import { crearSolicitudAction } from '@/app/actions';
 import { BTN_PRIMARY } from '@/lib/buttonStyles';
+import { EMPRESAS, EMPRESA_DEFAULT, EMPRESA_IDS } from '@/lib/empresas';
 
 const estadoInicial: { error?: string } = {};
 
@@ -43,17 +44,42 @@ function formatearRut(value: string): string {
 export function SolicitudForm({
   plataformas,
   esAdmin = false,
+  esMultiempresas = false,
 }: {
   plataformas: Plataforma[];
   esAdmin?: boolean;
+  esMultiempresas?: boolean;
 }) {
   const [estado, formAction, pending] = useActionState(crearSolicitudAction, estadoInicial);
   const [tipo, setTipo] = useState<TipoSolicitud>('crear');
+  const [empresa, setEmpresa] = useState<EmpresaId>(EMPRESA_DEFAULT);
   const [rut, setRut] = useState('');
   const [rutError, setRutError] = useState('');
+  const dominioActivo = EMPRESAS[esMultiempresas ? empresa : EMPRESA_DEFAULT].dominio;
 
   return (
     <form action={formAction} className="space-y-5 rounded-xl border border-border bg-card p-6">
+      {esMultiempresas && (
+        <div>
+          <label htmlFor="empresa" className="block text-sm font-medium text-foreground">
+            Empresa
+          </label>
+          <select
+            id="empresa"
+            name="empresa"
+            value={empresa}
+            onChange={(e) => setEmpresa(e.target.value as EmpresaId)}
+            className={inputClass}
+          >
+            {EMPRESA_IDS.map((id) => (
+              <option key={id} value={id}>
+                {EMPRESAS[id].nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div>
         <label htmlFor="tipo" className="block text-sm font-medium text-foreground">
           Tipo de solicitud
@@ -108,7 +134,7 @@ export function SolicitudForm({
 
       {tipo === 'modificar' && (
         <div className="space-y-4">
-          <CampoEmail label="Correo @capitalinteligente.cl a modificar" name="correoCorporativo" />
+          <CampoEmail label={`Correo @${dominioActivo} a modificar`} name="correoCorporativo" />
           <div>
             <label htmlFor="detalle" className="block text-sm font-medium text-foreground">
               Detalle del cambio
@@ -121,7 +147,7 @@ export function SolicitudForm({
       {tipo === 'baja' && (
         <div className="space-y-4">
           <CampoEmail
-            label="Correo @capitalinteligente.cl a dar de baja"
+            label={`Correo @${dominioActivo} a dar de baja`}
             name="correoCorporativo"
           />
           <Campo

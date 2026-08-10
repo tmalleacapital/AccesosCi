@@ -100,6 +100,7 @@ function ModalNuevoUsuario({
   const [rol, setRol] = useState<Rol>('bp');
   const [hojaId, setHojaId] = useState('');
   const [grupoNombre, setGrupoNombre] = useState('');
+  const [multiempresas, setMultiempresas] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -108,7 +109,7 @@ function ModalNuevoUsuario({
     setError(null);
     const grupoBp = rol === 'bp' && hojaId && grupoNombre ? `${hojaId}|${grupoNombre}` : undefined;
     startTransition(async () => {
-      const res = await crearUsuarioAction(email, nombre, rol, grupoBp);
+      const res = await crearUsuarioAction(email, nombre, rol, grupoBp, multiempresas);
       if (res.error) {
         setError(res.error);
         return;
@@ -176,6 +177,15 @@ function ModalNuevoUsuario({
               />
             </div>
           )}
+          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={multiempresas}
+              onChange={(e) => setMultiempresas(e.target.checked)}
+              className="rounded border-border"
+            />
+            Multiempresas (puede elegir empresa en Nueva solicitud)
+          </label>
           {error && <p className="text-xs text-rose-500">{error}</p>}
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onCerrar} className={BTN_SECONDARY}>
@@ -219,6 +229,7 @@ function FilaUsuario({
   pending,
   onCambiarRol,
   onCambiarGrupo,
+  onToggleMultiempresas,
   onEliminar,
 }: {
   usuario: Usuario;
@@ -227,6 +238,7 @@ function FilaUsuario({
   pending: boolean;
   onCambiarRol: (email: string, rol: Rol) => void;
   onCambiarGrupo: (email: string, hojaId: string, grupoNombre: string) => void;
+  onToggleMultiempresas: (email: string, multiempresas: boolean) => void;
   onEliminar: (email: string) => void;
 }) {
   const [hojaInicial, grupoInicial] = (usuario.grupoBp ?? '').split('|');
@@ -280,6 +292,16 @@ function FilaUsuario({
         )}
       </td>
       <td className="px-3 py-2 text-center">
+        <input
+          type="checkbox"
+          disabled={pending}
+          checked={usuario.multiempresas === true}
+          onChange={(e) => onToggleMultiempresas(usuario.email, e.target.checked)}
+          title="Multiempresas"
+          className="rounded border-border disabled:opacity-40"
+        />
+      </td>
+      <td className="px-3 py-2 text-center">
         <button
           type="button"
           disabled={esYo || pending}
@@ -322,7 +344,7 @@ export function AdminUsuarios({
     const grupoBp = rol === 'bp' ? usuario?.grupoBp : undefined;
     setPendingEmail(email);
     try {
-      await actualizarRolUsuarioAction(email, rol, grupoBp);
+      await actualizarRolUsuarioAction(email, rol, grupoBp, usuario?.multiempresas);
     } finally {
       setPendingEmail(null);
     }
@@ -334,7 +356,18 @@ export function AdminUsuarios({
     const grupoBp = hojaId && grupoNombre ? `${hojaId}|${grupoNombre}` : undefined;
     setPendingEmail(email);
     try {
-      await actualizarRolUsuarioAction(email, usuario.rol, grupoBp);
+      await actualizarRolUsuarioAction(email, usuario.rol, grupoBp, usuario.multiempresas);
+    } finally {
+      setPendingEmail(null);
+    }
+  }
+
+  async function handleToggleMultiempresas(email: string, multiempresas: boolean) {
+    const usuario = usuarios.find((u) => u.email === email);
+    if (!usuario) return;
+    setPendingEmail(email);
+    try {
+      await actualizarRolUsuarioAction(email, usuario.rol, usuario.grupoBp, multiempresas);
     } finally {
       setPendingEmail(null);
     }
@@ -374,9 +407,12 @@ export function AdminUsuarios({
         <table className="w-full min-w-[640px] table-fixed text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-left">
-              <th className="w-[35%] px-3 py-2 font-semibold text-foreground">Nombre / Correo</th>
-              <th className="w-[20%] px-3 py-2 font-semibold text-foreground">Rol</th>
-              <th className="w-[35%] px-3 py-2 font-semibold text-foreground">Grupo BP</th>
+              <th className="w-[30%] px-3 py-2 font-semibold text-foreground">Nombre / Correo</th>
+              <th className="w-[18%] px-3 py-2 font-semibold text-foreground">Rol</th>
+              <th className="w-[30%] px-3 py-2 font-semibold text-foreground">Grupo BP</th>
+              <th className="w-[12%] px-3 py-2 font-semibold text-foreground" title="Multiempresas">
+                Multi.
+              </th>
               <th className="w-[10%] px-3 py-2" />
             </tr>
           </thead>
@@ -390,6 +426,7 @@ export function AdminUsuarios({
                 pending={pendingEmail === u.email}
                 onCambiarRol={handleCambiarRol}
                 onCambiarGrupo={handleCambiarGrupo}
+                onToggleMultiempresas={handleToggleMultiempresas}
                 onEliminar={setConfirmandoEliminar}
               />
             ))}

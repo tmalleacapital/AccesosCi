@@ -91,6 +91,54 @@ describe('crearSolicitud', () => {
   it('lanza si la entrada es inválida', () => {
     expect(() => crearSolicitud({ ...inputCrear, plataformaIds: [] }, deps)).toThrow();
   });
+
+  it('usa capital_inteligente por defecto si no se especifica empresa', () => {
+    const sol = crearSolicitud(inputCrear, deps);
+    expect(sol.empresa).toBe('capital_inteligente');
+  });
+
+  it('respeta la empresa indicada explícitamente', () => {
+    const sol = crearSolicitud({ ...inputCrear, empresa: 'capital_prime' }, deps);
+    expect(sol.empresa).toBe('capital_prime');
+  });
+});
+
+describe('validarEntradaSolicitud — empresa', () => {
+  it('en modificar/baja, exige que el correo corporativo termine en el dominio de la empresa seleccionada', () => {
+    const errores = validarEntradaSolicitud({
+      tipo: 'baja',
+      solicitanteEmail: 'ana@capitalinteligente.cl',
+      datos: { correoCorporativo: 'saliente@capitalinteligente.cl' },
+      plataformaIds: ['gmail'],
+      empresa: 'capital_prime',
+    });
+    expect(errores).toContain(
+      'El correo corporativo debe ser @capitalprime.cl para Capital Prime.',
+    );
+  });
+
+  it('acepta el correo cuando el dominio coincide con la empresa seleccionada', () => {
+    const errores = validarEntradaSolicitud({
+      tipo: 'baja',
+      solicitanteEmail: 'ana@capitalinteligente.cl',
+      datos: { correoCorporativo: 'saliente@capitalprime.cl' },
+      plataformaIds: ['gmail'],
+      empresa: 'capital_prime',
+    });
+    expect(errores).toEqual([]);
+  });
+
+  it('sin empresa explícita, exige el dominio de capital_inteligente (comportamiento por defecto)', () => {
+    const errores = validarEntradaSolicitud({
+      tipo: 'baja',
+      solicitanteEmail: 'ana@capitalinteligente.cl',
+      datos: { correoCorporativo: 'saliente@capitalprime.cl' },
+      plataformaIds: ['gmail'],
+    });
+    expect(errores).toContain(
+      'El correo corporativo debe ser @capitalinteligente.cl para Capital Inteligente.',
+    );
+  });
 });
 
 describe('cambiarEstadoSolicitud', () => {

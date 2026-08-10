@@ -23,20 +23,29 @@ import { EliminadosPanel } from '@/components/EliminadosPanel';
 import { AdminUsuarios } from '@/components/AdminUsuarios';
 import { HistorialPanel } from '@/components/HistorialPanel';
 import { AutoRefresh } from '@/components/AutoRefresh';
+import { EmpresaSwitcher } from '@/components/EmpresaSwitcher';
+import { EMPRESA_DEFAULT, normalizarEmpresaId } from '@/lib/empresas';
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ creada?: string }>;
+  searchParams: Promise<{ creada?: string; empresa?: string }>;
 }) {
   const sesion = await getSesion();
   if (!sesion) redirect('/login');
 
-  const { creada } = await searchParams;
+  const { creada, empresa: empresaParam } = await searchParams;
   const esEquipo = sesion.rol === 'equipo' || sesion.rol === 'admin';
   const esBP = sesion.rol === 'bp';
   const esFinanzas = sesion.rol === 'finanzas';
   const esAdmin = sesion.rol === 'admin';
+  const esMultiempresas = sesion.multiempresas === true;
+
+  // Solo admin/finanzas pueden ver ambas empresas; el resto siempre opera en la default.
+  const puedeVerAmbasEmpresas = esAdmin || esFinanzas;
+  const empresaActiva = puedeVerAmbasEmpresas
+    ? normalizarEmpresaId(empresaParam)
+    : EMPRESA_DEFAULT;
 
   const filtroGrupo = (() => {
     if (!esBP || !sesion.grupoBp) return undefined;
@@ -68,7 +77,21 @@ export default async function Home({
   ]);
 
   const plataformasActivas = plataformas.filter((p) => p.activa);
-  const solicitudes = esEquipo ? todas : todas.filter((s) => s.solicitanteEmail === sesion.email);
+  const solicitudes = esEquipo
+    ? todas.filter((s) => s.empresa === empresaActiva)
+    : todas.filter((s) => s.solicitanteEmail === sesion.email);
+
+  // "Lista de correos" solo debe mostrar la estructura de la empresa activa:
+  // los estáticos (correos.json) son siempre Capital Inteligente; lo demás
+  // se filtra por la etiqueta `empresa` de cada hoja dinámica.
+  const incluirEstaticosCorreos = empresaActiva === 'capital_inteligente';
+  const hojasExtraEmpresa = hojasExtra.filter((h) => h.empresa === empresaActiva);
+  const hojaIdsEmpresa = new Set(hojasExtraEmpresa.map((h) => h.id));
+  const gruposExtraEmpresa = gruposExtra.filter((g) => hojaIdsEmpresa.has(g.hojaId));
+  const miembrosExtraEmpresa = miembrosExtra.filter((m) => hojaIdsEmpresa.has(m.hojaId));
+  const gruposOcultosEmpresa = incluirEstaticosCorreos
+    ? gruposOcultos
+    : gruposOcultos.filter((g) => hojaIdsEmpresa.has(g.hojaId));
 
   const labelRol =
     sesion.rol === 'admin'
@@ -103,14 +126,17 @@ export default async function Home({
               </p>
             </div>
           </div>
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground hover:bg-muted"
-            >
-              Cerrar sesión
-            </button>
-          </form>
+          <div className="flex items-center gap-2">
+            {puedeVerAmbasEmpresas && <EmpresaSwitcher actual={empresaActiva} />}
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground hover:bg-muted"
+              >
+                Cerrar sesión
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
@@ -127,7 +153,13 @@ export default async function Home({
             {
               id: 'nueva',
               label: 'Nueva solicitud',
-              content: <SolicitudForm plataformas={plataformasActivas} esAdmin={esAdmin} />,
+              content: (
+                <SolicitudForm
+                  plataformas={plataformasActivas}
+                  esAdmin={esAdmin}
+                  esMultiempresas={esMultiempresas}
+                />
+              ),
             },
             {
               id: 'solicitudes',
@@ -159,13 +191,15 @@ export default async function Home({
                     content: (
                       <ListaCorreos
                         edits={edicionesCorreos}
-                        gruposExtra={gruposExtra}
-                        gruposOcultos={gruposOcultos}
-                        miembrosExtra={miembrosExtra}
-                        hojasExtra={hojasExtra}
+                        gruposExtra={gruposExtraEmpresa}
+                        gruposOcultos={gruposOcultosEmpresa}
+                        miembrosExtra={miembrosExtraEmpresa}
+                        hojasExtra={hojasExtraEmpresa}
                         soloLectura={esBP || esFinanzas}
                         esAdmin={sesion.rol === 'admin'}
                         filtroGrupo={filtroGrupo}
+                        incluirEstaticos={incluirEstaticosCorreos}
+                        empresaActiva={empresaActiva}
                       />
                     ),
                   },

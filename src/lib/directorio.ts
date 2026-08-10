@@ -30,9 +30,16 @@ export async function obtenerRosterAccesos(): Promise<RosterEntryAccesos[]> {
       leerUsuarios(),
     ]);
 
+  // Este export es exclusivo de Capital Inteligente (ver ADR 001); Capital
+  // Prime y cualquier otra empresa futura quedan fuera hasta que se decida
+  // explícitamente extender la integración.
+  const hojasExtraCapitalInteligente = hojasExtra.filter(
+    (h) => h.empresa === 'capital_inteligente',
+  );
+
   const asesores = fusionarDirectorio({
     hojasEstaticas,
-    hojasExtra,
+    hojasExtra: hojasExtraCapitalInteligente,
     gruposExtra,
     gruposOcultos,
     miembrosExtra,

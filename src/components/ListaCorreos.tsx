@@ -17,6 +17,7 @@ import {
   transferirGrupoAction,
 } from '@/app/actions';
 import type { GrupoExtra, HojaExtra, MiembroExtra } from '@/lib/db';
+import type { EmpresaId } from '@/types';
 import { PRECIOS } from '@/lib/precios';
 import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY } from '@/lib/buttonStyles';
 
@@ -1752,6 +1753,8 @@ export function ListaCorreos({
   soloLectura = false,
   esAdmin = false,
   filtroGrupo,
+  incluirEstaticos = true,
+  empresaActiva = 'capital_inteligente',
 }: {
   edits: Record<string, string>;
   gruposExtra?: GrupoExtra[];
@@ -1761,13 +1764,18 @@ export function ListaCorreos({
   soloLectura?: boolean;
   esAdmin?: boolean;
   filtroGrupo?: { hojaId: string; grupoNombre: string };
+  /** Falso cuando se está viendo una empresa sin estructura estática (ej. Capital Prime). */
+  incluirEstaticos?: boolean;
+  empresaActiva?: EmpresaId;
 }) {
+  const hojasEstaticas = incluirEstaticos ? data.hojas : [];
+
   const todasHojas = useMemo(
     () => [
-      ...data.hojas,
+      ...hojasEstaticas,
       ...hojasExtra.map((h) => ({ id: h.id, nombre: h.nombre, grupos: [] as Grupo[] })),
     ],
-    [hojasExtra],
+    [hojasEstaticas, hojasExtra],
   );
 
   const hojasVisibles = useMemo(() => {
@@ -1777,7 +1785,7 @@ export function ListaCorreos({
 
   const [hojaActiva, setHojaActiva] = useState(() => {
     if (filtroGrupo) return filtroGrupo.hojaId;
-    return data.hojas[0]?.id;
+    return incluirEstaticos ? data.hojas[0]?.id : hojasExtra[0]?.id;
   });
   const [creandoMBP, setCreandoMBP] = useState(false);
   const [transfiriendo, setTransfiriendo] = useState<TransferirDatos | null>(null);
@@ -1948,7 +1956,7 @@ export function ListaCorreos({
 
   const todosBPs = useMemo<BPDisponible[]>(() => {
     const result: BPDisponible[] = [];
-    for (const h of data.hojas) {
+    for (const h of hojasEstaticas) {
       for (const g of h.grupos) {
         if (!gruposOcultos.some((o) => o.hojaId === h.id && o.nombre === g.nombre)) {
           result.push({ hojaId: h.id, hojaLabel: etiquetaHoja(h.nombre), grupoNombre: g.nombre });
@@ -2080,7 +2088,7 @@ export function ListaCorreos({
   }
 
   async function handleCrearMBP(nombre: string) {
-    await crearHojaAction(nombre);
+    await crearHojaAction(nombre, empresaActiva);
     setCreandoMBP(false);
   }
 
@@ -2113,7 +2121,7 @@ export function ListaCorreos({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <p className="text-xs text-muted-foreground">
-            {totalGeneral} correos en {data.hojas.length} hojas · Actualizado{' '}
+            {totalGeneral} correos en {todasHojas.length} hojas · Actualizado{' '}
             {formatFechaChile(edits['__meta__||lastUpdated'] ?? data.actualizado)}
           </p>
           {!soloLectura && (

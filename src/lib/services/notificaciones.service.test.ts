@@ -19,6 +19,7 @@ const solicitud: Solicitud = {
   solicitanteEmail: 'ana@capitalinteligente.cl',
   fechaCreacion: '2026-06-18T12:00:00.000Z',
   estado: 'pendiente',
+  empresa: 'capital_inteligente',
   datos: {
     nombre: 'Juan',
     segundoNombre: 'Carlos',
