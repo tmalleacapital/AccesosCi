@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
+import correosData from '@/data/correos.json';
 import {
   leerEdicionesCorreos,
   leerGruposExtra,
@@ -83,10 +84,18 @@ export default async function Home({
 
   // "Lista de correos" solo debe mostrar la estructura de la empresa activa:
   // los estáticos (correos.json) son siempre Capital Inteligente; lo demás
-  // se filtra por la etiqueta `empresa` de cada hoja dinámica.
+  // se filtra por la etiqueta `empresa` de cada hoja dinámica. Ojo: un BP
+  // dinámico (grupos_extra) puede colgar de un MBP ESTÁTICO (ej. Vanema bajo
+  // "Skala"), así que los ids estáticos también cuentan como "permitidos".
   const incluirEstaticosCorreos = empresaActiva === 'capital_inteligente';
+  const hojaIdsEstaticos = new Set(
+    (correosData as { hojas: { id: string }[] }).hojas.map((h) => h.id),
+  );
   const hojasExtraEmpresa = hojasExtra.filter((h) => h.empresa === empresaActiva);
-  const hojaIdsEmpresa = new Set(hojasExtraEmpresa.map((h) => h.id));
+  const hojaIdsEmpresa = new Set([
+    ...(incluirEstaticosCorreos ? hojaIdsEstaticos : []),
+    ...hojasExtraEmpresa.map((h) => h.id),
+  ]);
   const gruposExtraEmpresa = gruposExtra.filter((g) => hojaIdsEmpresa.has(g.hojaId));
   const miembrosExtraEmpresa = miembrosExtra.filter((m) => hojaIdsEmpresa.has(m.hojaId));
   const gruposOcultosEmpresa = incluirEstaticosCorreos
