@@ -199,7 +199,7 @@ function nombreHojaUnico(base: string, usados: Set<string>): string {
 export async function POST(req: NextRequest) {
   try {
     const sesion = await getSesion();
-    if (!sesion || sesion.rol !== 'admin') {
+    if (!sesion || (sesion.rol !== 'admin' && sesion.rol !== 'finanzas')) {
       return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
     }
 
