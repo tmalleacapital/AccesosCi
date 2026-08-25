@@ -127,6 +127,52 @@ async function existeCorreoActivoEnOtroGrupo(correo: string): Promise<boolean> {
   return false;
 }
 
+async function obtenerNombreCorreo(correo: string): Promise<string> {
+  const buscado = correo.toLowerCase();
+  const nombreEdit = await leerEdicionCorreo(correo, 'nombre');
+  if (nombreEdit) return nombreEdit;
+  const estatico = asesoresEstaticos.find((a) => a.correo.toLowerCase() === buscado);
+  if (estatico) return estatico.nombre;
+  const miembros = await leerMiembrosExtra();
+  return miembros.find((m) => m.correo.toLowerCase() === buscado)?.nombre ?? correo;
+}
+
+/**
+ * La marca "T.L" en el directorio es cosmética por sí sola; acá se traduce a
+ * acceso real: al activarla, la persona pasa a tener login con el rol
+ * team_leader (mismos poderes que bp) sobre el BP en el que se le marcó. Al
+ * desactivarla, pierde ese acceso y vuelve a ser "solo un asesor" (sin fila
+ * en `usuarios`, salvo que ya tuviera un rol con más alcance — admin, equipo,
+ * finanzas o bp — que no se toca).
+ */
+async function sincronizarPermisosTeamLeader(
+  correo: string,
+  esTL: boolean,
+  hojaId?: string,
+  grupoNombre?: string,
+): Promise<void> {
+  const correoLimpio = correo.trim().toLowerCase();
+  const usuarios = await leerUsuarios();
+  const usuario = usuarios.find((u) => u.email.toLowerCase() === correoLimpio);
+
+  if (usuario && ['admin', 'equipo', 'finanzas', 'bp'].includes(usuario.rol)) {
+    return;
+  }
+
+  if (esTL) {
+    if (!hojaId || !grupoNombre) return;
+    const grupoBp = `${hojaId}|${grupoNombre}`;
+    if (usuario) {
+      await actualizarRolUsuario(correoLimpio, 'team_leader', grupoBp, usuario.multiempresas);
+    } else {
+      const nombre = await obtenerNombreCorreo(correoLimpio);
+      await crearUsuario(correoLimpio, nombre, 'team_leader', grupoBp);
+    }
+  } else if (usuario?.rol === 'team_leader') {
+    await eliminarUsuario(correoLimpio);
+  }
+}
+
 async function etiquetaHojaGrupo(hojaId: string, grupoNombre: string): Promise<string> {
   const estatica = hojasEstaticas.find((h) => h.id === hojaId);
   if (estatica) return `${estatica.nombre.replace(/^MBP\s+/, '')} · ${grupoNombre}`;
@@ -375,6 +421,8 @@ export async function editarCorreoAction(
   campo: string,
   valor: string,
   valorAnterior?: string,
+  hojaId?: string,
+  grupoNombre?: string,
 ): Promise<void> {
   const sesion = await getSesion();
   if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
@@ -382,6 +430,9 @@ export async function editarCorreoAction(
   // Las claves de métricas (__metrica__:...) no son correos reales, no se registran en el historial.
   if (correo.includes('@') && valor !== valorAnterior) {
     await registrarHistorial(correo, campo, valorAnterior ?? null, valor, sesion.email);
+  }
+  if (campo === 'tl') {
+    await sincronizarPermisosTeamLeader(correo, valor === 'true', hojaId, grupoNombre);
   }
   revalidatePath('/');
 }

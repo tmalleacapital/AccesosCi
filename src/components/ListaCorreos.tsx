@@ -1117,7 +1117,14 @@ function TablaGrupo({
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
   edits: Record<string, string>;
   eliminadas: Set<string>;
-  onEdit: (correoOrig: string, campo: string, valor: string, valorAnterior: string) => void;
+  onEdit: (
+    correoOrig: string,
+    campo: string,
+    valor: string,
+    valorAnterior: string,
+    hojaId?: string,
+    grupoNombre?: string,
+  ) => void;
   onEditMetrica: (label: string, valor: number) => void;
   onEliminar: (correo: string, nombre: string) => void;
   onTransferir: (datos: TransferirDatos) => void;
@@ -1262,7 +1269,9 @@ function TablaGrupo({
                 asesor={a}
                 columnas={columnas}
                 edits={edits}
-                onEdit={(campo, valor, anterior) => onEdit(a.correo, campo, valor, anterior)}
+                onEdit={(campo, valor, anterior) =>
+                  onEdit(a.correo, campo, valor, anterior, hojaId, grupo.nombre)
+                }
                 onEliminar={() =>
                   onEliminar(a.correo, edits[estKey(a.correo, 'nombre')] ?? a.nombre)
                 }
@@ -1972,13 +1981,20 @@ export function ListaCorreos({
     return result;
   }, [gruposOcultos, gruposExtra, todasHojas]);
 
-  function handleEdit(correoOrig: string, campo: string, valor: string, valorAnterior: string) {
+  function handleEdit(
+    correoOrig: string,
+    campo: string,
+    valor: string,
+    valorAnterior: string,
+    hojaId?: string,
+    grupoNombre?: string,
+  ) {
     const key = estKey(correoOrig, campo);
     const anteriorOverride = edits[key];
     startTransition(() => {
       actualizarEdits({ key, valor });
     });
-    editarCorreoAction(correoOrig, campo, valor, valorAnterior).catch((err) => {
+    editarCorreoAction(correoOrig, campo, valor, valorAnterior, hojaId, grupoNombre).catch((err) => {
       startTransition(() => {
         actualizarEdits({ key, valor: anteriorOverride ?? '' });
       });
