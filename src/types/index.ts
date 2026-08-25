@@ -1,6 +1,6 @@
 // Tipos de dominio de "Solicitudes de Accesos".
 
-export type Rol = 'solicitante' | 'equipo' | 'admin' | 'bp' | 'finanzas';
+export type Rol = 'solicitante' | 'equipo' | 'admin' | 'bp' | 'finanzas' | 'team_leader';
 
 /** Empresa a la que pertenece una solicitud/hoja (ver src/lib/empresas.ts). */
 export type EmpresaId = 'capital_inteligente' | 'capital_prime';

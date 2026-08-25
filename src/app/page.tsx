@@ -37,7 +37,8 @@ export default async function Home({
 
   const { creada, empresa: empresaParam } = await searchParams;
   const esEquipo = sesion.rol === 'equipo' || sesion.rol === 'admin';
-  const esBP = sesion.rol === 'bp';
+  // team_leader tiene exactamente los mismos poderes que bp.
+  const esBP = sesion.rol === 'bp' || sesion.rol === 'team_leader';
   const esFinanzas = sesion.rol === 'finanzas';
   const esAdmin = sesion.rol === 'admin';
   const esMultiempresas = sesion.multiempresas === true;
@@ -109,9 +110,11 @@ export default async function Home({
         ? 'Equipo de Accesos'
         : sesion.rol === 'bp'
           ? 'Business Partner'
-          : sesion.rol === 'finanzas'
-            ? 'Finanzas'
-            : 'Solicitante';
+          : sesion.rol === 'team_leader'
+            ? 'Team Leader'
+            : sesion.rol === 'finanzas'
+              ? 'Finanzas'
+              : 'Solicitante';
 
   return (
     <div className="flex flex-1 flex-col bg-background">

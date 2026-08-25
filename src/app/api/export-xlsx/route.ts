@@ -41,7 +41,13 @@ function makeBorder(color = BORDE): any {
 export async function POST(req: NextRequest) {
   try {
   const sesion = await getSesion();
-  if (!sesion || (sesion.rol !== 'admin' && sesion.rol !== 'bp' && sesion.rol !== 'finanzas')) {
+  if (
+    !sesion ||
+    (sesion.rol !== 'admin' &&
+      sesion.rol !== 'bp' &&
+      sesion.rol !== 'team_leader' &&
+      sesion.rol !== 'finanzas')
+  ) {
     return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
   }
 
@@ -49,7 +55,7 @@ export async function POST(req: NextRequest) {
   const portalCreadas = Number(metricas?.portalCreadas ?? 0);
   const salesCloud = Number(metricas?.salesCloud ?? 0);
 
-  if (sesion.rol === 'bp') {
+  if (sesion.rol === 'bp' || sesion.rol === 'team_leader') {
     const sep = sesion.grupoBp?.indexOf('|') ?? -1;
     const grupoPropio = sep !== -1 ? sesion.grupoBp!.slice(sep + 1) : undefined;
     if (!grupoPropio || grupoPropio !== grupoNombre) {

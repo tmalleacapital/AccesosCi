@@ -24,9 +24,15 @@ const ROLES: { value: Rol; label: string }[] = [
   { value: 'admin', label: 'Administrador' },
   { value: 'equipo', label: 'Equipo de Accesos' },
   { value: 'bp', label: 'Business Partner' },
+  { value: 'team_leader', label: 'Team Leader' },
   { value: 'finanzas', label: 'Finanzas' },
   { value: 'solicitante', label: 'Solicitante' },
 ];
+
+/** team_leader tiene exactamente los mismos poderes que bp (mismo grupo asignable). */
+function tieneGrupoBp(rol: Rol): boolean {
+  return rol === 'bp' || rol === 'team_leader';
+}
 
 function useHojasDisponibles(hojasExtra: HojaExtra[], gruposExtra: GrupoExtra[]) {
   return useMemo(() => {
@@ -107,7 +113,8 @@ function ModalNuevoUsuario({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const grupoBp = rol === 'bp' && hojaId && grupoNombre ? `${hojaId}|${grupoNombre}` : undefined;
+    const grupoBp =
+      tieneGrupoBp(rol) && hojaId && grupoNombre ? `${hojaId}|${grupoNombre}` : undefined;
     startTransition(async () => {
       const res = await crearUsuarioAction(email, nombre, rol, grupoBp, multiempresas);
       if (res.error) {
@@ -161,7 +168,7 @@ function ModalNuevoUsuario({
               ))}
             </select>
           </div>
-          {rol === 'bp' && (
+          {tieneGrupoBp(rol) && (
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">
                 Grupo que puede ver (opcional)
@@ -278,7 +285,7 @@ function FilaUsuario({
         </select>
       </td>
       <td className="px-3 py-2">
-        {usuario.rol === 'bp' ? (
+        {tieneGrupoBp(usuario.rol) ? (
           <fieldset disabled={pending} className="contents">
             <SelectorGrupoBp
               hojaId={hojaId}
@@ -341,7 +348,7 @@ export function AdminUsuarios({
 
   async function handleCambiarRol(email: string, rol: Rol) {
     const usuario = usuarios.find((u) => u.email === email);
-    const grupoBp = rol === 'bp' ? usuario?.grupoBp : undefined;
+    const grupoBp = tieneGrupoBp(rol) ? usuario?.grupoBp : undefined;
     setPendingEmail(email);
     try {
       await actualizarRolUsuarioAction(email, rol, grupoBp, usuario?.multiempresas);
