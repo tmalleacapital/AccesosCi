@@ -39,6 +39,8 @@ export default async function Home({
   const esEquipo = sesion.rol === 'equipo' || sesion.rol === 'admin';
   // team_leader tiene exactamente los mismos poderes que bp.
   const esBP = sesion.rol === 'bp' || sesion.rol === 'team_leader';
+  // mbp ve TODOS los BP de su MBP (grupo_bp guarda solo el hojaId, sin grupo).
+  const esMBP = sesion.rol === 'mbp';
   const esFinanzas = sesion.rol === 'finanzas';
   const esAdmin = sesion.rol === 'admin';
   const esMultiempresas = sesion.multiempresas === true;
@@ -50,6 +52,9 @@ export default async function Home({
     : EMPRESA_DEFAULT;
 
   const filtroGrupo = (() => {
+    if (esMBP) {
+      return sesion.grupoBp ? { hojaId: sesion.grupoBp } : undefined;
+    }
     if (!esBP || !sesion.grupoBp) return undefined;
     const sep = sesion.grupoBp.indexOf('|');
     if (sep === -1) return undefined;
@@ -69,11 +74,11 @@ export default async function Home({
   ] = await Promise.all([
     leerPlataformas(),
     leerSolicitudes(),
-    esEquipo || esBP || esFinanzas ? leerEdicionesCorreos() : Promise.resolve({}),
-    esAdmin || esBP || esFinanzas ? leerGruposExtra() : Promise.resolve([]),
-    esAdmin || esBP || esFinanzas ? leerGruposOcultos() : Promise.resolve([]),
-    esEquipo || esBP || esFinanzas ? leerMiembrosExtra() : Promise.resolve([]),
-    esAdmin || esBP || esFinanzas ? leerHojasExtra() : Promise.resolve([]),
+    esEquipo || esBP || esMBP || esFinanzas ? leerEdicionesCorreos() : Promise.resolve({}),
+    esAdmin || esBP || esMBP || esFinanzas ? leerGruposExtra() : Promise.resolve([]),
+    esAdmin || esBP || esMBP || esFinanzas ? leerGruposOcultos() : Promise.resolve([]),
+    esEquipo || esBP || esMBP || esFinanzas ? leerMiembrosExtra() : Promise.resolve([]),
+    esAdmin || esBP || esMBP || esFinanzas ? leerHojasExtra() : Promise.resolve([]),
     esAdmin ? leerUsuarios() : Promise.resolve([]),
     esAdmin ? leerHistorial() : Promise.resolve([]),
   ]);
@@ -112,9 +117,11 @@ export default async function Home({
           ? 'Business Partner'
           : sesion.rol === 'team_leader'
             ? 'Team Leader'
-            : sesion.rol === 'finanzas'
-              ? 'Finanzas'
-              : 'Solicitante';
+            : sesion.rol === 'mbp'
+              ? 'MBP'
+              : sesion.rol === 'finanzas'
+                ? 'Finanzas'
+                : 'Solicitante';
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -195,7 +202,7 @@ export default async function Home({
                 />
               ),
             },
-            ...(sesion.rol === 'admin' || esBP || esFinanzas
+            ...(sesion.rol === 'admin' || esBP || esMBP || esFinanzas
               ? [
                   {
                     id: 'correos',
@@ -207,7 +214,7 @@ export default async function Home({
                         gruposOcultos={gruposOcultosEmpresa}
                         miembrosExtra={miembrosExtraEmpresa}
                         hojasExtra={hojasExtraEmpresa}
-                        soloLectura={esBP || esFinanzas}
+                        soloLectura={esBP || esMBP || esFinanzas}
                         esAdmin={sesion.rol === 'admin'}
                         filtroGrupo={filtroGrupo}
                         incluirEstaticos={incluirEstaticosCorreos}

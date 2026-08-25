@@ -1774,7 +1774,7 @@ export function ListaCorreos({
   hojasExtra?: HojaExtra[];
   soloLectura?: boolean;
   esAdmin?: boolean;
-  filtroGrupo?: { hojaId: string; grupoNombre: string };
+  filtroGrupo?: { hojaId: string; grupoNombre?: string };
   /** Falso cuando se está viendo una empresa sin estructura estática (ej. Capital Prime). */
   incluirEstaticos?: boolean;
   empresaActiva?: EmpresaId;
@@ -1871,7 +1871,9 @@ export function ListaCorreos({
         }));
       return extras.length > 0 ? { ...g, asesores: [...g.asesores, ...extras] } : g;
     });
-    return filtroGrupo ? todos.filter((g) => g.nombre === filtroGrupo.grupoNombre) : todos;
+    return filtroGrupo?.grupoNombre
+      ? todos.filter((g) => g.nombre === filtroGrupo.grupoNombre)
+      : todos;
   }, [hoja, gruposDinamicos, ocultoSet, miembrosExtra, filtroGrupo]);
 
   const grupos = useMemo(() => {
@@ -2224,7 +2226,7 @@ export function ListaCorreos({
               >
                 {etiqueta}
               </button>
-              {!filtroGrupo && (
+              {!filtroGrupo?.grupoNombre && (
                 <button
                   type="button"
                   title={`Exportar ${etiqueta}`}

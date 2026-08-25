@@ -155,7 +155,7 @@ async function sincronizarPermisosTeamLeader(
   const usuarios = await leerUsuarios();
   const usuario = usuarios.find((u) => u.email.toLowerCase() === correoLimpio);
 
-  if (usuario && ['admin', 'equipo', 'finanzas', 'bp'].includes(usuario.rol)) {
+  if (usuario && ['admin', 'equipo', 'finanzas', 'bp', 'mbp'].includes(usuario.rol)) {
     return;
   }
 
@@ -270,6 +270,7 @@ export async function solicitarCodigoAction(_prev: unknown, formData: FormData) 
   if (
     rol !== 'bp' &&
     rol !== 'team_leader' &&
+    rol !== 'mbp' &&
     rol !== 'admin' &&
     rol !== 'finanzas' &&
     usuario?.multiempresas !== true
@@ -308,7 +309,14 @@ export async function verificarCodigoAction(_prev: unknown, formData: FormData) 
   const grupoBp = usuario?.grupoBp;
   const multiempresas = usuario?.multiempresas === true;
 
-  if (rol !== 'bp' && rol !== 'team_leader' && rol !== 'admin' && rol !== 'finanzas' && !multiempresas) {
+  if (
+    rol !== 'bp' &&
+    rol !== 'team_leader' &&
+    rol !== 'mbp' &&
+    rol !== 'admin' &&
+    rol !== 'finanzas' &&
+    !multiempresas
+  ) {
     return { error: 'No tienes acceso a esta plataforma.', email };
   }
 

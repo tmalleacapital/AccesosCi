@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
     (sesion.rol !== 'admin' &&
       sesion.rol !== 'bp' &&
       sesion.rol !== 'team_leader' &&
+      sesion.rol !== 'mbp' &&
       sesion.rol !== 'finanzas')
   ) {
     return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });

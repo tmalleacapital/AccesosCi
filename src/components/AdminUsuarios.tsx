@@ -25,6 +25,7 @@ const ROLES: { value: Rol; label: string }[] = [
   { value: 'equipo', label: 'Equipo de Accesos' },
   { value: 'bp', label: 'Business Partner' },
   { value: 'team_leader', label: 'Team Leader' },
+  { value: 'mbp', label: 'MBP' },
   { value: 'finanzas', label: 'Finanzas' },
   { value: 'solicitante', label: 'Solicitante' },
 ];
@@ -32,6 +33,11 @@ const ROLES: { value: Rol; label: string }[] = [
 /** team_leader tiene exactamente los mismos poderes que bp (mismo grupo asignable). */
 function tieneGrupoBp(rol: Rol): boolean {
   return rol === 'bp' || rol === 'team_leader';
+}
+
+/** mbp ve todos los BP de un MBP: solo se asigna la hoja (MBP), no un grupo puntual. */
+function tieneAsignacion(rol: Rol): boolean {
+  return tieneGrupoBp(rol) || rol === 'mbp';
 }
 
 function useHojasDisponibles(hojasExtra: HojaExtra[], gruposExtra: GrupoExtra[]) {
@@ -56,11 +62,14 @@ function SelectorGrupoBp({
   grupoNombre,
   hojas,
   onChange,
+  soloHoja = false,
 }: {
   hojaId: string;
   grupoNombre: string;
   hojas: { id: string; nombre: string; grupos: string[] }[];
   onChange: (hojaId: string, grupoNombre: string) => void;
+  /** mbp: solo elige el MBP completo, sin restringir a un grupo puntual. */
+  soloHoja?: boolean;
 }) {
   const hojaActual = hojas.find((h) => h.id === hojaId);
   return (
@@ -77,19 +86,21 @@ function SelectorGrupoBp({
           </option>
         ))}
       </select>
-      <select
-        value={grupoNombre}
-        disabled={!hojaActual}
-        onChange={(e) => onChange(hojaId, e.target.value)}
-        className="w-0 min-w-0 flex-1 truncate rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
-      >
-        <option value="">Grupo…</option>
-        {hojaActual?.grupos.map((g) => (
-          <option key={g} value={g}>
-            {g}
-          </option>
-        ))}
-      </select>
+      {!soloHoja && (
+        <select
+          value={grupoNombre}
+          disabled={!hojaActual}
+          onChange={(e) => onChange(hojaId, e.target.value)}
+          className="w-0 min-w-0 flex-1 truncate rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
+        >
+          <option value="">Grupo…</option>
+          {hojaActual?.grupos.map((g) => (
+            <option key={g} value={g}>
+              {g}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   );
 }
@@ -114,7 +125,11 @@ function ModalNuevoUsuario({
     e.preventDefault();
     setError(null);
     const grupoBp =
-      tieneGrupoBp(rol) && hojaId && grupoNombre ? `${hojaId}|${grupoNombre}` : undefined;
+      rol === 'mbp'
+        ? hojaId || undefined
+        : tieneGrupoBp(rol) && hojaId && grupoNombre
+          ? `${hojaId}|${grupoNombre}`
+          : undefined;
     startTransition(async () => {
       const res = await crearUsuarioAction(email, nombre, rol, grupoBp, multiempresas);
       if (res.error) {
@@ -168,15 +183,16 @@ function ModalNuevoUsuario({
               ))}
             </select>
           </div>
-          {tieneGrupoBp(rol) && (
+          {tieneAsignacion(rol) && (
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">
-                Grupo que puede ver (opcional)
+                {rol === 'mbp' ? 'MBP que puede ver' : 'Grupo que puede ver (opcional)'}
               </label>
               <SelectorGrupoBp
                 hojaId={hojaId}
                 grupoNombre={grupoNombre}
                 hojas={hojas}
+                soloHoja={rol === 'mbp'}
                 onChange={(h, g) => {
                   setHojaId(h);
                   setGrupoNombre(g);
@@ -255,6 +271,10 @@ function FilaUsuario({
   function handleSelectorChange(h: string, g: string) {
     setHojaId(h);
     setGrupoNombre(g);
+    if (usuario.rol === 'mbp') {
+      onCambiarGrupo(usuario.email, h, '');
+      return;
+    }
     // Solo guardamos cuando hay selección completa (MBP + grupo) o cuando se limpia el MBP.
     if ((h && g) || !h) {
       onCambiarGrupo(usuario.email, h, g);
@@ -285,12 +305,13 @@ function FilaUsuario({
         </select>
       </td>
       <td className="px-3 py-2">
-        {tieneGrupoBp(usuario.rol) ? (
+        {tieneAsignacion(usuario.rol) ? (
           <fieldset disabled={pending} className="contents">
             <SelectorGrupoBp
               hojaId={hojaId}
               grupoNombre={grupoNombre}
               hojas={hojas}
+              soloHoja={usuario.rol === 'mbp'}
               onChange={handleSelectorChange}
             />
           </fieldset>
@@ -360,7 +381,12 @@ export function AdminUsuarios({
   async function handleCambiarGrupo(email: string, hojaId: string, grupoNombre: string) {
     const usuario = usuarios.find((u) => u.email === email);
     if (!usuario) return;
-    const grupoBp = hojaId && grupoNombre ? `${hojaId}|${grupoNombre}` : undefined;
+    const grupoBp =
+      usuario.rol === 'mbp'
+        ? hojaId || undefined
+        : hojaId && grupoNombre
+          ? `${hojaId}|${grupoNombre}`
+          : undefined;
     setPendingEmail(email);
     try {
       await actualizarRolUsuarioAction(email, usuario.rol, grupoBp, usuario.multiempresas);
