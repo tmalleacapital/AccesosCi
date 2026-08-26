@@ -18,7 +18,11 @@ import {
 } from '@/app/actions';
 import type { GrupoExtra, HojaExtra, MiembroExtra } from '@/lib/db';
 import type { EmpresaId } from '@/types';
-import { resolverAmbitoPorHoja } from '@/lib/services/acceso.service';
+import {
+  puedeVerAsesor,
+  resolverAmbitoPorHoja,
+  type Ambito,
+} from '@/lib/services/acceso.service';
 import { PRECIOS } from '@/lib/precios';
 import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY } from '@/lib/buttonStyles';
 
@@ -30,6 +34,8 @@ interface Asesor {
   slack: boolean;
   sf: string;
   tl: boolean;
+  /** Correo del Team Leader al que reporta este asesor dentro de su BP. */
+  reportaA?: string;
   fechaEliminacion?: string;
   comentario?: string;
   esDinamico?: boolean;
@@ -654,6 +660,7 @@ function FilaAsesor({
   asesor,
   columnas,
   edits,
+  teamLeaders = [],
   onEdit,
   onEliminar,
   onTransferir,
@@ -661,8 +668,10 @@ function FilaAsesor({
   esAdmin = false,
 }: {
   asesor: Asesor;
-  columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
+  columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean; reportaA: boolean };
   edits: Record<string, string>;
+  /** Team Leaders del mismo BP, para elegir a cuál reporta este asesor. */
+  teamLeaders?: { correo: string; nombre: string }[];
   onEdit: (campo: string, valor: string, valorAnterior: string) => void;
   onEliminar: () => void;
   onTransferir: (datos: TransferirDatos) => void;
@@ -685,6 +694,7 @@ function FilaAsesor({
   const slack = val('slack') === 'true';
   const sf = val('sf');
   const tl = val('tl') === 'true';
+  const reportaA = val('reportaA');
   const fecha = val('fechaEliminacion');
 
   const estadoActivo = (estado || 'Activo').toLowerCase() === 'activo';
@@ -805,6 +815,33 @@ function FilaAsesor({
               opciones={['', 'Portal', 'Cloud']}
               onSave={(v) => onEdit('sf', v, sf)}
             />
+          )}
+        </td>
+      )}
+
+      {/* Reporta a — a qué Team Leader del BP pertenece este asesor */}
+      {columnas.reportaA && (
+        <td className="px-3 py-2">
+          {tl ? (
+            <span className="text-xs text-muted-foreground/40">—</span>
+          ) : soloLectura ? (
+            <span className="text-xs text-muted-foreground">
+              {teamLeaders.find((t) => t.correo.toLowerCase() === reportaA.toLowerCase())?.nombre ??
+                '—'}
+            </span>
+          ) : (
+            <select
+              value={reportaA}
+              onChange={(e) => onEdit('reportaA', e.target.value, reportaA)}
+              className="w-full max-w-[140px] truncate rounded-md border border-border bg-background px-1.5 py-0.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              <option value="">—</option>
+              {teamLeaders.map((t) => (
+                <option key={t.correo} value={t.correo}>
+                  {t.nombre}
+                </option>
+              ))}
+            </select>
           )}
         </td>
       )}
@@ -1115,7 +1152,7 @@ function TablaGrupo({
 }: {
   hojaId: string;
   grupo: Grupo;
-  columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean };
+  columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean; reportaA: boolean };
   edits: Record<string, string>;
   eliminadas: Set<string>;
   onEdit: (
@@ -1152,6 +1189,11 @@ function TablaGrupo({
       const nombreB = edits[estKey(b.correo, 'nombre')] ?? b.nombre;
       return nombreA.localeCompare(nombreB, 'es', { sensitivity: 'base' });
     });
+
+  // Un BP puede tener varios Team Leaders; cada asesor se asigna a uno de ellos.
+  const teamLeaders = asesoresVisibles
+    .filter((a) => (edits[estKey(a.correo, 'tl')] ?? (a.tl ? 'true' : 'false')) === 'true')
+    .map((a) => ({ correo: a.correo, nombre: edits[estKey(a.correo, 'nombre')] ?? a.nombre }));
 
   return (
     <div className="space-y-2">
@@ -1220,6 +1262,11 @@ function TablaGrupo({
               {columnas.sf && (
                 <th className="w-[95px] px-3 py-2 font-semibold text-foreground">Nodia</th>
               )}
+              {columnas.reportaA && (
+                <th className="w-[150px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
+                  Reporta a
+                </th>
+              )}
               {columnas.fecha && (
                 <th className="w-[130px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
                   Fecha baja
@@ -1270,6 +1317,7 @@ function TablaGrupo({
                 asesor={a}
                 columnas={columnas}
                 edits={edits}
+                teamLeaders={teamLeaders}
                 onEdit={(campo, valor, anterior) =>
                   onEdit(a.correo, campo, valor, anterior, hojaId, grupo.nombre)
                 }
@@ -1777,9 +1825,10 @@ export function ListaCorreos({
   esAdmin?: boolean;
   /**
    * Ámbitos que la persona puede ver, sumando todos sus cargos. Un ámbito sin
-   * grupoNombre es un MBP completo. `undefined` = sin restricción (admin/finanzas).
+   * grupoNombre es un MBP completo; con soloDeTeamLeader queda acotado a los
+   * asesores de ese TL. `undefined` = sin restricción (admin/finanzas).
    */
-  filtroAmbitos?: { hojaId: string; grupoNombre?: string }[];
+  filtroAmbitos?: Ambito[];
   /** Falso cuando se está viendo una empresa sin estructura estática (ej. Capital Prime). */
   incluirEstaticos?: boolean;
   empresaActiva?: EmpresaId;
@@ -1879,18 +1928,34 @@ export function ListaCorreos({
           slack: m.slack,
           sf: m.sf,
           tl: false,
+          reportaA: undefined as string | undefined,
           fechaEliminacion: undefined as string | undefined,
           esDinamico: true,
         }));
       return extras.length > 0 ? { ...g, asesores: [...g.asesores, ...extras] } : g;
     });
     if (!restringido) return todos;
-    // null = tiene el MBP completo; un Set acota a esos BP puntuales.
+
+    // null en la hoja = MBP completo; si no, solo los BP del Map. Un BP puede
+    // venir acotado al correo de un Team Leader: ahí solo se ven los asesores
+    // que le reportan (y él mismo).
     const permitidos = ambitoPorHoja.get(hoja.id);
     if (permitidos === undefined) return [];
     if (permitidos === null) return todos;
-    return todos.filter((g) => permitidos.has(g.nombre));
-  }, [hoja, gruposDinamicos, ocultoSet, miembrosExtra, restringido, ambitoPorHoja]);
+
+    return todos
+      .filter((g) => permitidos.has(g.nombre))
+      .map((g) => {
+        const soloDeTL = permitidos.get(g.nombre) ?? null;
+        if (!soloDeTL) return g;
+        return {
+          ...g,
+          asesores: g.asesores.filter((a) =>
+            puedeVerAsesor(soloDeTL, a.correo, edits[estKey(a.correo, 'reportaA')] ?? a.reportaA),
+          ),
+        };
+      });
+  }, [hoja, gruposDinamicos, ocultoSet, miembrosExtra, restringido, ambitoPorHoja, edits]);
 
   const grupos = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -1915,8 +1980,12 @@ export function ListaCorreos({
       slack: all.some((a) => a.slack),
       sf: all.some((a) => !!a.sf),
       fecha: all.some((a) => !!a.fechaEliminacion),
+      // Solo tiene sentido asignar "reporta a" si el BP tiene algún Team Leader.
+      reportaA: all.some(
+        (a) => (edits[estKey(a.correo, 'tl')] ?? (a.tl ? 'true' : 'false')) === 'true',
+      ),
     };
-  }, [gruposSinBusqueda]);
+  }, [gruposSinBusqueda, edits]);
 
   const totalHoja = gruposSinBusqueda.reduce(
     (n, g) =>

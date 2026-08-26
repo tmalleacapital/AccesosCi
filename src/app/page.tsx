@@ -46,6 +46,7 @@ export default async function Home({
   // además líder de un BP dentro de ese mismo MBP): el acceso a "Lista de
   // correos" es la unión de todos ellos. Ver acceso.service.
   const ambitos = calcularAmbitos({
+    email: sesion.email,
     rol: sesion.rol,
     grupoBp: sesion.grupoBp,
     asignaciones: sesion.asignaciones,
