@@ -4,10 +4,12 @@ import { useMemo, useState, useTransition } from 'react';
 import correosData from '@/data/correos.json';
 import {
   actualizarRolUsuarioAction,
+  crearAsignacionAction,
   crearUsuarioAction,
+  eliminarAsignacionAction,
   eliminarUsuarioAction,
 } from '@/app/actions';
-import type { Rol, Usuario } from '@/types';
+import type { Rol, RolAsignable, Usuario } from '@/types';
 import type { GrupoExtra, HojaExtra } from '@/lib/db';
 import { cn } from '@/lib/utils';
 import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY } from '@/lib/buttonStyles';
@@ -245,6 +247,170 @@ function Spinner({ className = '' }: { className?: string }) {
   );
 }
 
+const ROLES_ASIGNABLES: { value: RolAsignable; label: string }[] = [
+  { value: 'bp', label: 'Business Partner' },
+  { value: 'team_leader', label: 'Team Leader' },
+  { value: 'mbp', label: 'MBP (todo el MBP)' },
+];
+
+function ModalAsignaciones({
+  usuario,
+  hojas,
+  onCerrar,
+}: {
+  usuario: Usuario;
+  hojas: { id: string; nombre: string; grupos: string[] }[];
+  onCerrar: () => void;
+}) {
+  const [rol, setRol] = useState<RolAsignable>('bp');
+  const [hojaId, setHojaId] = useState('');
+  const [grupoNombre, setGrupoNombre] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const hojaActual = hojas.find((h) => h.id === hojaId);
+  const asignaciones = usuario.asignaciones ?? [];
+
+  function nombreHoja(id: string) {
+    return hojas.find((h) => h.id === id)?.nombre ?? id;
+  }
+
+  function handleAgregar() {
+    setError(null);
+    startTransition(async () => {
+      const res = await crearAsignacionAction(
+        usuario.email,
+        rol,
+        hojaId,
+        grupoNombre || undefined,
+      );
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      setHojaId('');
+      setGrupoNombre('');
+    });
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={onCerrar}
+    >
+      <div
+        className="w-full max-w-md space-y-4 rounded-xl border border-border bg-card p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Cargos extra</h2>
+          <p className="text-xs text-muted-foreground">
+            {usuario.nombre} · además de su rol principal
+          </p>
+        </div>
+
+        {asignaciones.length === 0 ? (
+          <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            Sin cargos extra. Solo tiene el rol principal.
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {asignaciones.map((a) => (
+              <li
+                key={a.id}
+                className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <div className="truncate text-xs font-medium text-foreground">
+                    {ROLES_ASIGNABLES.find((r) => r.value === a.rol)?.label ?? a.rol}
+                  </div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {nombreHoja(a.hojaId)}
+                    {a.grupoNombre ? ` · ${a.grupoNombre}` : ' · todos sus BP'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => startTransition(async () => { await eliminarAsignacionAction(a.id); })}
+                  className="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-muted disabled:opacity-40"
+                >
+                  Quitar
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="space-y-2 border-t border-border pt-3">
+          <label className="text-xs font-medium text-muted-foreground">Agregar cargo</label>
+          <select
+            value={rol}
+            onChange={(e) => {
+              setRol(e.target.value as RolAsignable);
+              setGrupoNombre('');
+            }}
+            className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            {ROLES_ASIGNABLES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+          <div className="flex gap-1.5">
+            <select
+              value={hojaId}
+              onChange={(e) => {
+                setHojaId(e.target.value);
+                setGrupoNombre('');
+              }}
+              className="w-0 min-w-0 flex-1 truncate rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              <option value="">MBP…</option>
+              {hojas.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.nombre}
+                </option>
+              ))}
+            </select>
+            {rol !== 'mbp' && (
+              <select
+                value={grupoNombre}
+                disabled={!hojaActual}
+                onChange={(e) => setGrupoNombre(e.target.value)}
+                className="w-0 min-w-0 flex-1 truncate rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
+              >
+                <option value="">BP…</option>
+                {hojaActual?.grupos.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          {error && <p className="text-xs text-rose-500">{error}</p>}
+          <button
+            type="button"
+            onClick={handleAgregar}
+            disabled={isPending || !hojaId || (rol !== 'mbp' && !grupoNombre)}
+            className={cn(BTN_PRIMARY, 'w-full')}
+          >
+            {isPending ? 'Guardando…' : 'Agregar cargo'}
+          </button>
+        </div>
+
+        <div className="flex justify-end border-t border-border pt-3">
+          <button type="button" onClick={onCerrar} className={BTN_SECONDARY}>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FilaUsuario({
   usuario,
   hojas,
@@ -253,6 +419,7 @@ function FilaUsuario({
   onCambiarRol,
   onCambiarGrupo,
   onToggleMultiempresas,
+  onGestionarCargos,
   onEliminar,
 }: {
   usuario: Usuario;
@@ -262,6 +429,7 @@ function FilaUsuario({
   onCambiarRol: (email: string, rol: Rol) => void;
   onCambiarGrupo: (email: string, hojaId: string, grupoNombre: string) => void;
   onToggleMultiempresas: (email: string, multiempresas: boolean) => void;
+  onGestionarCargos: (email: string) => void;
   onEliminar: (email: string) => void;
 }) {
   const [hojaInicial, grupoInicial] = (usuario.grupoBp ?? '').split('|');
@@ -320,6 +488,19 @@ function FilaUsuario({
         )}
       </td>
       <td className="px-3 py-2 text-center">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => onGestionarCargos(usuario.email)}
+          title="Cargos extra además del rol principal"
+          className="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-muted disabled:opacity-40"
+        >
+          {(usuario.asignaciones?.length ?? 0) > 0
+            ? `+${usuario.asignaciones!.length}`
+            : 'Agregar'}
+        </button>
+      </td>
+      <td className="px-3 py-2 text-center">
         <input
           type="checkbox"
           disabled={pending}
@@ -359,6 +540,7 @@ export function AdminUsuarios({
   const [confirmandoEliminar, setConfirmandoEliminar] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [eliminarPending, setEliminarPending] = useState(false);
+  const [gestionandoCargos, setGestionandoCargos] = useState<string | null>(null);
 
   const hojas = useHojasDisponibles(hojasExtra, gruposExtra);
 
@@ -440,10 +622,19 @@ export function AdminUsuarios({
         <table className="w-full min-w-[640px] table-fixed text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-left">
-              <th className="w-[30%] px-3 py-2 font-semibold text-foreground">Nombre / Correo</th>
-              <th className="w-[18%] px-3 py-2 font-semibold text-foreground">Rol</th>
-              <th className="w-[30%] px-3 py-2 font-semibold text-foreground">Grupo BP</th>
-              <th className="w-[12%] px-3 py-2 font-semibold text-foreground" title="Multiempresas">
+              <th className="w-[26%] px-3 py-2 font-semibold text-foreground">Nombre / Correo</th>
+              <th className="w-[16%] px-3 py-2 font-semibold text-foreground">Rol principal</th>
+              <th className="w-[26%] px-3 py-2 font-semibold text-foreground">Grupo BP</th>
+              <th
+                className="w-[12%] px-3 py-2 text-center font-semibold text-foreground"
+                title="Cargos extra además del rol principal"
+              >
+                Cargos
+              </th>
+              <th
+                className="w-[10%] px-3 py-2 text-center font-semibold text-foreground"
+                title="Multiempresas"
+              >
                 Multi.
               </th>
               <th className="w-[10%] px-3 py-2" />
@@ -460,6 +651,7 @@ export function AdminUsuarios({
                 onCambiarRol={handleCambiarRol}
                 onCambiarGrupo={handleCambiarGrupo}
                 onToggleMultiempresas={handleToggleMultiempresas}
+                onGestionarCargos={setGestionandoCargos}
                 onEliminar={setConfirmandoEliminar}
               />
             ))}
@@ -470,6 +662,19 @@ export function AdminUsuarios({
       {mostrandoModal && (
         <ModalNuevoUsuario hojas={hojas} onCerrar={() => setMostrandoModal(false)} />
       )}
+
+      {gestionandoCargos &&
+        (() => {
+          const u = usuarios.find((x) => x.email === gestionandoCargos);
+          if (!u) return null;
+          return (
+            <ModalAsignaciones
+              usuario={u}
+              hojas={hojas}
+              onCerrar={() => setGestionandoCargos(null)}
+            />
+          );
+        })()}
 
       {confirmandoEliminar && (
         <div

@@ -2,6 +2,23 @@
 
 export type Rol = 'solicitante' | 'equipo' | 'admin' | 'bp' | 'finanzas' | 'team_leader' | 'mbp';
 
+/** Roles que se ejercen sobre un MBP/BP concreto (a diferencia de admin/equipo/finanzas). */
+export type RolAsignable = 'bp' | 'team_leader' | 'mbp';
+
+/**
+ * Cargo adicional de una persona sobre un MBP o BP puntual. Existe porque
+ * alguien puede tener más de un cargo a la vez — ej. ser MBP de Forza Capital
+ * y además líder del "BP Forza Capital" que vive dentro de ese mismo MBP.
+ */
+export interface Asignacion {
+  id: string;
+  email: string;
+  rol: RolAsignable;
+  hojaId: string;
+  /** Ausente cuando rol es 'mbp': cubre todos los BP de esa hoja. */
+  grupoNombre?: string;
+}
+
 /** Empresa a la que pertenece una solicitud/hoja (ver src/lib/empresas.ts). */
 export type EmpresaId = 'capital_inteligente' | 'capital_prime';
 
@@ -15,6 +32,8 @@ export interface Usuario {
   grupoBp?: string;
   /** Puede operar (ver/solicitar) en más de una empresa, independiente de `rol`. */
   multiempresas?: boolean;
+  /** Cargos extra además del rol principal. El acceso es la unión de ambos. */
+  asignaciones?: Asignacion[];
 }
 
 export interface Plataforma {

@@ -1,6 +1,6 @@
 import 'server-only';
 import { createClient } from '@supabase/supabase-js';
-import type { EmpresaId, Plataforma, Solicitud, Usuario } from '@/types';
+import type { Asignacion, EmpresaId, Plataforma, Solicitud, Usuario } from '@/types';
 
 function getSupabase() {
   return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -37,17 +37,84 @@ function rowToSolicitud(row: SolicitudRow): Solicitud {
   };
 }
 
-export async function leerUsuarios(): Promise<Usuario[]> {
+export async function leerAsignaciones(): Promise<Asignacion[]> {
   const { data, error } = await getSupabase()
-    .from('usuarios')
-    .select('email, nombre, rol, grupo_bp, multiempresas');
+    .from('usuario_asignaciones')
+    .select('id, email, rol, hoja_id, grupo_nombre')
+    .order('creado_en');
+  if (error) throw new Error(`leerAsignaciones: ${error.message}`);
+  return (data ?? []).map((row) => ({
+    id: row.id as string,
+    email: row.email as string,
+    rol: row.rol as Asignacion['rol'],
+    hojaId: row.hoja_id as string,
+    grupoNombre: (row.grupo_nombre as string | null) ?? undefined,
+  }));
+}
+
+export async function leerAsignacionesDe(email: string): Promise<Asignacion[]> {
+  const { data, error } = await getSupabase()
+    .from('usuario_asignaciones')
+    .select('id, email, rol, hoja_id, grupo_nombre')
+    .eq('email', email.trim().toLowerCase())
+    .order('creado_en');
+  if (error) throw new Error(`leerAsignacionesDe: ${error.message}`);
+  return (data ?? []).map((row) => ({
+    id: row.id as string,
+    email: row.email as string,
+    rol: row.rol as Asignacion['rol'],
+    hojaId: row.hoja_id as string,
+    grupoNombre: (row.grupo_nombre as string | null) ?? undefined,
+  }));
+}
+
+export async function crearAsignacion(
+  email: string,
+  rol: Asignacion['rol'],
+  hojaId: string,
+  grupoNombre?: string,
+): Promise<void> {
+  const { error } = await getSupabase().from('usuario_asignaciones').insert({
+    email: email.trim().toLowerCase(),
+    rol,
+    hoja_id: hojaId,
+    grupo_nombre: grupoNombre ?? null,
+  });
+  // 23505 = ya existe ese mismo cargo; es idempotente, no es un error real.
+  if (error && error.code !== '23505') throw new Error(`crearAsignacion: ${error.message}`);
+}
+
+export async function eliminarAsignacion(id: string): Promise<void> {
+  const { error } = await getSupabase().from('usuario_asignaciones').delete().eq('id', id);
+  if (error) throw new Error(`eliminarAsignacion: ${error.message}`);
+}
+
+export async function eliminarAsignacionesDe(email: string): Promise<void> {
+  const { error } = await getSupabase()
+    .from('usuario_asignaciones')
+    .delete()
+    .eq('email', email.trim().toLowerCase());
+  if (error) throw new Error(`eliminarAsignacionesDe: ${error.message}`);
+}
+
+export async function leerUsuarios(): Promise<Usuario[]> {
+  const [{ data, error }, asignaciones] = await Promise.all([
+    getSupabase().from('usuarios').select('email, nombre, rol, grupo_bp, multiempresas'),
+    leerAsignaciones(),
+  ]);
   if (error) throw new Error(`leerUsuarios: ${error.message}`);
+  const porEmail = new Map<string, Asignacion[]>();
+  for (const a of asignaciones) {
+    const key = a.email.toLowerCase();
+    porEmail.set(key, [...(porEmail.get(key) ?? []), a]);
+  }
   return (data ?? []).map((row) => ({
     email: row.email as string,
     nombre: row.nombre as string,
     rol: row.rol as Usuario['rol'],
     grupoBp: (row.grupo_bp as string | null) ?? undefined,
     multiempresas: (row.multiempresas as boolean | null) ?? false,
+    asignaciones: porEmail.get((row.email as string).toLowerCase()) ?? [],
     passwordHash: '',
   }));
 }
@@ -93,7 +160,22 @@ export async function moverGrupoBpUsuarios(
   if (error) throw new Error(`moverGrupoBpUsuarios: ${error.message}`);
 }
 
+/** Mismo caso que moverGrupoBpUsuarios, pero para los cargos extra (multi-rol). */
+export async function moverAsignacionesDeGrupo(
+  hojaIdAnterior: string,
+  grupoNombre: string,
+  hojaIdNueva: string,
+): Promise<void> {
+  const { error } = await getSupabase()
+    .from('usuario_asignaciones')
+    .update({ hoja_id: hojaIdNueva })
+    .eq('hoja_id', hojaIdAnterior)
+    .eq('grupo_nombre', grupoNombre);
+  if (error) throw new Error(`moverAsignacionesDeGrupo: ${error.message}`);
+}
+
 export async function eliminarUsuario(email: string): Promise<void> {
+  await eliminarAsignacionesDe(email);
   const { error } = await getSupabase().from('usuarios').delete().eq('email', email);
   if (error) throw new Error(`eliminarUsuario: ${error.message}`);
 }

@@ -6,6 +6,9 @@ import {
   actualizarRolUsuario,
   actualizarSolicitud,
   borrarEdicionesEliminado,
+  crearAsignacion,
+  eliminarAsignacion,
+  moverAsignacionesDeGrupo,
   crearGrupoExtra,
   crearHojaExtra,
   crearMiembroExtra,
@@ -58,6 +61,7 @@ import type {
   EstadoSolicitud,
   Plataforma,
   Rol,
+  RolAsignable,
   TipoSolicitud,
 } from '@/types';
 
@@ -274,7 +278,8 @@ export async function solicitarCodigoAction(_prev: unknown, formData: FormData) 
     rol !== 'mbp' &&
     rol !== 'admin' &&
     rol !== 'finanzas' &&
-    usuario?.multiempresas !== true
+    usuario?.multiempresas !== true &&
+    (usuario?.asignaciones?.length ?? 0) === 0
   ) {
     return { error: 'No tienes acceso a esta plataforma.' };
   }
@@ -309,6 +314,11 @@ export async function verificarCodigoAction(_prev: unknown, formData: FormData) 
   const rol = usuario?.rol ?? 'solicitante';
   const grupoBp = usuario?.grupoBp;
   const multiempresas = usuario?.multiempresas === true;
+  const asignaciones = (usuario?.asignaciones ?? []).map((a) => ({
+    rol: a.rol,
+    hojaId: a.hojaId,
+    ...(a.grupoNombre ? { grupoNombre: a.grupoNombre } : {}),
+  }));
 
   if (
     rol !== 'bp' &&
@@ -316,7 +326,8 @@ export async function verificarCodigoAction(_prev: unknown, formData: FormData) 
     rol !== 'mbp' &&
     rol !== 'admin' &&
     rol !== 'finanzas' &&
-    !multiempresas
+    !multiempresas &&
+    asignaciones.length === 0
   ) {
     return { error: 'No tienes acceso a esta plataforma.', email };
   }
@@ -328,6 +339,7 @@ export async function verificarCodigoAction(_prev: unknown, formData: FormData) 
     rol,
     ...(grupoBp ? { grupoBp } : {}),
     ...(multiempresas ? { multiempresas } : {}),
+    ...(asignaciones.length > 0 ? { asignaciones } : {}),
   });
   redirect('/');
 }
@@ -840,6 +852,7 @@ export async function transferirGrupoAction(
   // Si algún usuario BP tenía su acceso apuntando a este grupo en el MBP
   // anterior, hay que moverlo junto con el grupo o pierde su propio acceso.
   await moverGrupoBpUsuarios(`${hojaId}|${grupoNombre}`, `${targetHojaId}|${grupoNombre}`);
+  await moverAsignacionesDeGrupo(hojaId, grupoNombre, targetHojaId);
 
   revalidatePath('/');
 }
@@ -888,5 +901,35 @@ export async function eliminarUsuarioAction(email: string): Promise<void> {
     throw new Error('No puedes eliminar tu propia cuenta.');
   }
   await eliminarUsuario(email.trim().toLowerCase());
+  revalidatePath('/');
+}
+
+// ─── Cargos extra (multi-rol) ─────────────────────────────────────────────────
+
+export async function crearAsignacionAction(
+  email: string,
+  rol: RolAsignable,
+  hojaId: string,
+  grupoNombre?: string,
+): Promise<{ error?: string }> {
+  const sesion = await getSesion();
+  if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
+  if (!hojaId) return { error: 'Debes elegir un MBP.' };
+  // Un cargo bp/team_leader es sobre un BP puntual; mbp cubre la hoja completa.
+  if (rol !== 'mbp' && !grupoNombre) return { error: 'Debes elegir un BP.' };
+  await crearAsignacion(
+    email,
+    rol,
+    hojaId,
+    rol === 'mbp' ? undefined : grupoNombre,
+  );
+  revalidatePath('/');
+  return {};
+}
+
+export async function eliminarAsignacionAction(id: string): Promise<void> {
+  const sesion = await getSesion();
+  if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
+  await eliminarAsignacion(id);
   revalidatePath('/');
 }

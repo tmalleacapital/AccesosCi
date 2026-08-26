@@ -26,6 +26,7 @@ import { HistorialPanel } from '@/components/HistorialPanel';
 import { AutoRefresh } from '@/components/AutoRefresh';
 import { EmpresaSwitcher } from '@/components/EmpresaSwitcher';
 import { EMPRESA_DEFAULT, normalizarEmpresaId } from '@/lib/empresas';
+import { calcularAmbitos } from '@/lib/services/acceso.service';
 
 export default async function Home({
   searchParams,
@@ -37,29 +38,25 @@ export default async function Home({
 
   const { creada, empresa: empresaParam } = await searchParams;
   const esEquipo = sesion.rol === 'equipo' || sesion.rol === 'admin';
-  // team_leader tiene exactamente los mismos poderes que bp.
-  const esBP = sesion.rol === 'bp' || sesion.rol === 'team_leader';
-  // mbp ve TODOS los BP de su MBP (grupo_bp guarda solo el hojaId, sin grupo).
-  const esMBP = sesion.rol === 'mbp';
   const esFinanzas = sesion.rol === 'finanzas';
   const esAdmin = sesion.rol === 'admin';
   const esMultiempresas = sesion.multiempresas === true;
+
+  // Una persona puede tener varios cargos a la vez (ej. MBP de Forza Capital y
+  // además líder de un BP dentro de ese mismo MBP): el acceso a "Lista de
+  // correos" es la unión de todos ellos. Ver acceso.service.
+  const ambitos = calcularAmbitos({
+    rol: sesion.rol,
+    grupoBp: sesion.grupoBp,
+    asignaciones: sesion.asignaciones,
+  });
+  const tieneAmbitos = ambitos.length > 0;
 
   // Solo admin/finanzas pueden ver ambas empresas; el resto siempre opera en la default.
   const puedeVerAmbasEmpresas = esAdmin || esFinanzas;
   const empresaActiva = puedeVerAmbasEmpresas
     ? normalizarEmpresaId(empresaParam)
     : EMPRESA_DEFAULT;
-
-  const filtroGrupo = (() => {
-    if (esMBP) {
-      return sesion.grupoBp ? { hojaId: sesion.grupoBp } : undefined;
-    }
-    if (!esBP || !sesion.grupoBp) return undefined;
-    const sep = sesion.grupoBp.indexOf('|');
-    if (sep === -1) return undefined;
-    return { hojaId: sesion.grupoBp.slice(0, sep), grupoNombre: sesion.grupoBp.slice(sep + 1) };
-  })();
 
   const [
     plataformas,
@@ -74,11 +71,11 @@ export default async function Home({
   ] = await Promise.all([
     leerPlataformas(),
     leerSolicitudes(),
-    esEquipo || esBP || esMBP || esFinanzas ? leerEdicionesCorreos() : Promise.resolve({}),
-    esAdmin || esBP || esMBP || esFinanzas ? leerGruposExtra() : Promise.resolve([]),
-    esAdmin || esBP || esMBP || esFinanzas ? leerGruposOcultos() : Promise.resolve([]),
-    esEquipo || esBP || esMBP || esFinanzas ? leerMiembrosExtra() : Promise.resolve([]),
-    esAdmin || esBP || esMBP || esFinanzas ? leerHojasExtra() : Promise.resolve([]),
+    esEquipo || tieneAmbitos || esFinanzas ? leerEdicionesCorreos() : Promise.resolve({}),
+    esAdmin || tieneAmbitos || esFinanzas ? leerGruposExtra() : Promise.resolve([]),
+    esAdmin || tieneAmbitos || esFinanzas ? leerGruposOcultos() : Promise.resolve([]),
+    esEquipo || tieneAmbitos || esFinanzas ? leerMiembrosExtra() : Promise.resolve([]),
+    esAdmin || tieneAmbitos || esFinanzas ? leerHojasExtra() : Promise.resolve([]),
     esAdmin ? leerUsuarios() : Promise.resolve([]),
     esAdmin ? leerHistorial() : Promise.resolve([]),
   ]);
@@ -108,7 +105,7 @@ export default async function Home({
     ? gruposOcultos
     : gruposOcultos.filter((g) => hojaIdsEmpresa.has(g.hojaId));
 
-  const labelRol =
+  const labelRolBase =
     sesion.rol === 'admin'
       ? 'Administrador'
       : sesion.rol === 'equipo'
@@ -122,6 +119,12 @@ export default async function Home({
               : sesion.rol === 'finanzas'
                 ? 'Finanzas'
                 : 'Solicitante';
+
+  const cargosExtra = sesion.asignaciones?.length ?? 0;
+  const labelRol =
+    cargosExtra > 0
+      ? `${labelRolBase} · +${cargosExtra} cargo${cargosExtra !== 1 ? 's' : ''}`
+      : labelRolBase;
 
   return (
     <div className="flex flex-1 flex-col bg-background">
@@ -202,7 +205,7 @@ export default async function Home({
                 />
               ),
             },
-            ...(sesion.rol === 'admin' || esBP || esMBP || esFinanzas
+            ...(esAdmin || tieneAmbitos || esFinanzas
               ? [
                   {
                     id: 'correos',
@@ -214,9 +217,9 @@ export default async function Home({
                         gruposOcultos={gruposOcultosEmpresa}
                         miembrosExtra={miembrosExtraEmpresa}
                         hojasExtra={hojasExtraEmpresa}
-                        soloLectura={esBP || esMBP || esFinanzas}
-                        esAdmin={sesion.rol === 'admin'}
-                        filtroGrupo={filtroGrupo}
+                        soloLectura={!esAdmin}
+                        esAdmin={esAdmin}
+                        filtroAmbitos={esAdmin || esFinanzas ? undefined : ambitos}
                         incluirEstaticos={incluirEstaticosCorreos}
                         empresaActiva={empresaActiva}
                       />

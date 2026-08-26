@@ -1,9 +1,16 @@
 import 'server-only';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
-import type { Rol } from '@/types';
+import type { Rol, RolAsignable } from '@/types';
 
 const COOKIE = 'sa_session';
+
+/** Cargo extra dentro de la sesión (ver Asignacion en @/types). */
+export interface AsignacionSesion {
+  rol: RolAsignable;
+  hojaId: string;
+  grupoNombre?: string;
+}
 
 export interface Sesion {
   email: string;
@@ -11,6 +18,8 @@ export interface Sesion {
   rol: Rol;
   grupoBp?: string;
   multiempresas?: boolean;
+  /** Cargos extra además del rol principal; el acceso es la unión de ambos. */
+  asignaciones?: AsignacionSesion[];
 }
 
 function firmar(payload: string): string {

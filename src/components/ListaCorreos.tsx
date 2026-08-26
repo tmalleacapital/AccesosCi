@@ -18,6 +18,7 @@ import {
 } from '@/app/actions';
 import type { GrupoExtra, HojaExtra, MiembroExtra } from '@/lib/db';
 import type { EmpresaId } from '@/types';
+import { resolverAmbitoPorHoja } from '@/lib/services/acceso.service';
 import { PRECIOS } from '@/lib/precios';
 import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY } from '@/lib/buttonStyles';
 
@@ -1763,7 +1764,7 @@ export function ListaCorreos({
   hojasExtra = [],
   soloLectura = false,
   esAdmin = false,
-  filtroGrupo,
+  filtroAmbitos,
   incluirEstaticos = true,
   empresaActiva = 'capital_inteligente',
 }: {
@@ -1774,7 +1775,11 @@ export function ListaCorreos({
   hojasExtra?: HojaExtra[];
   soloLectura?: boolean;
   esAdmin?: boolean;
-  filtroGrupo?: { hojaId: string; grupoNombre?: string };
+  /**
+   * Ámbitos que la persona puede ver, sumando todos sus cargos. Un ámbito sin
+   * grupoNombre es un MBP completo. `undefined` = sin restricción (admin/finanzas).
+   */
+  filtroAmbitos?: { hojaId: string; grupoNombre?: string }[];
   /** Falso cuando se está viendo una empresa sin estructura estática (ej. Capital Prime). */
   incluirEstaticos?: boolean;
   empresaActiva?: EmpresaId;
@@ -1789,13 +1794,21 @@ export function ListaCorreos({
     [hojasEstaticas, hojasExtra],
   );
 
+  const restringido = !!filtroAmbitos && filtroAmbitos.length > 0;
+
+  /** Por hoja: null = MBP completo (todos sus BP); Set = solo esos BP. */
+  const ambitoPorHoja = useMemo(
+    () => resolverAmbitoPorHoja(filtroAmbitos ?? []),
+    [filtroAmbitos],
+  );
+
   const hojasVisibles = useMemo(() => {
-    if (!filtroGrupo) return todasHojas;
-    return todasHojas.filter((h) => h.id === filtroGrupo.hojaId);
-  }, [todasHojas, filtroGrupo]);
+    if (!restringido) return todasHojas;
+    return todasHojas.filter((h) => ambitoPorHoja.has(h.id));
+  }, [todasHojas, restringido, ambitoPorHoja]);
 
   const [hojaActiva, setHojaActiva] = useState(() => {
-    if (filtroGrupo) return filtroGrupo.hojaId;
+    if (restringido) return filtroAmbitos![0].hojaId;
     return incluirEstaticos ? data.hojas[0]?.id : hojasExtra[0]?.id;
   });
   const [creandoMBP, setCreandoMBP] = useState(false);
@@ -1871,10 +1884,13 @@ export function ListaCorreos({
         }));
       return extras.length > 0 ? { ...g, asesores: [...g.asesores, ...extras] } : g;
     });
-    return filtroGrupo?.grupoNombre
-      ? todos.filter((g) => g.nombre === filtroGrupo.grupoNombre)
-      : todos;
-  }, [hoja, gruposDinamicos, ocultoSet, miembrosExtra, filtroGrupo]);
+    if (!restringido) return todos;
+    // null = tiene el MBP completo; un Set acota a esos BP puntuales.
+    const permitidos = ambitoPorHoja.get(hoja.id);
+    if (permitidos === undefined) return [];
+    if (permitidos === null) return todos;
+    return todos.filter((g) => permitidos.has(g.nombre));
+  }, [hoja, gruposDinamicos, ocultoSet, miembrosExtra, restringido, ambitoPorHoja]);
 
   const grupos = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -2206,7 +2222,7 @@ export function ListaCorreos({
         />
       </div>
 
-      {filtroGrupo && <ResumenCostos grupos={grupos} edits={edits} eliminadas={eliminadas} />}
+      {restringido && <ResumenCostos grupos={grupos} edits={edits} eliminadas={eliminadas} />}
 
       {/* Tabs por hoja */}
       <div className="flex flex-wrap gap-1 border-b border-border">
@@ -2226,7 +2242,7 @@ export function ListaCorreos({
               >
                 {etiqueta}
               </button>
-              {!filtroGrupo?.grupoNombre && (
+              {(!restringido || ambitoPorHoja.get(h.id) === null) && (
                 <button
                   type="button"
                   title={`Exportar ${etiqueta}`}
