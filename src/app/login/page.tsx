@@ -134,12 +134,14 @@ export default function LoginPage() {
             <button type="submit" disabled={step2Pending} className={cn(BTN_PRIMARY, 'w-full')}>
               {step2Pending ? 'Verificando…' : 'Ingresar'}
             </button>
+          </form>
+        )}
 
+        {emailEnviado && (
+          <form action={step1Action} onSubmit={iniciarCooldown} className="mt-4 space-y-2">
+            <input type="hidden" name="email" value={emailEnviado} />
             <button
               type="submit"
-              formAction={step1Action}
-              formNoValidate
-              onClick={iniciarCooldown}
               disabled={step1Pending || cooldown > 0}
               className="w-full text-center text-sm text-muted-foreground hover:text-foreground disabled:opacity-40"
             >
