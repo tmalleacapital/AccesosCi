@@ -187,14 +187,15 @@ async function marcarBajaCompletada(
     datos: DatosSolicitud;
     accesos: { plataformaId: string }[];
   },
-  plataformas: Plataforma[],
   usuarioEmail: string,
 ): Promise<void> {
   if (solicitudFinal.tipo !== 'baja') return;
-  const correoBaja = (solicitudFinal.datos as DatosBaja).correoCorporativo;
+  const correoBaja = (solicitudFinal.datos as DatosBaja).correoCorporativo.trim().toLowerCase();
   const idsAccesos = new Set(solicitudFinal.accesos.map((a) => a.plataformaId));
-  const pide = (palabra: string) =>
-    plataformas.some((p) => idsAccesos.has(p.id) && p.nombre.toLowerCase().includes(palabra));
+  // Se filtra por id (estable), no por nombre: el nombre visible de una
+  // plataforma puede cambiar (ej. Salesforce -> Nodia, Slack -> Hubix) sin
+  // que cambie su id.
+  const pide = (plataformaId: string) => idsAccesos.has(plataformaId);
   const fecha = fechaHoyChile();
 
   // Si la baja incluye Gmail, es baja completa de la cuenta.
@@ -220,9 +221,9 @@ async function marcarBajaCompletada(
   // Baja parcial: no se apaga nada automaticamente (eso queda manual), solo
   // se deja un comentario recordando que hay que eliminar ese acceso puntual.
   const porQuitar: string[] = [];
-  if (pide('slack')) porQuitar.push('Slack');
+  if (pide('slack')) porQuitar.push('Hubix');
   if (pide('jira')) porQuitar.push('Jira');
-  if (pide('salesforce')) porQuitar.push('Salesforce');
+  if (pide('salesforce')) porQuitar.push('Nodia');
   if (porQuitar.length === 0) return;
 
   const nota = `Eliminar ${porQuitar.join(', ')} el ${primerDiaProximoMesChile()}`;
@@ -356,12 +357,12 @@ export async function crearSolicitudAction(_prev: unknown, formData: FormData) {
     };
   } else if (tipo === 'modificar') {
     datos = {
-      correoCorporativo: String(formData.get('correoCorporativo') ?? ''),
+      correoCorporativo: String(formData.get('correoCorporativo') ?? '').trim().toLowerCase(),
       detalle: String(formData.get('detalle') ?? ''),
     };
   } else {
     datos = {
-      correoCorporativo: String(formData.get('correoCorporativo') ?? ''),
+      correoCorporativo: String(formData.get('correoCorporativo') ?? '').trim().toLowerCase(),
       redistribucionSalesforce: String(formData.get('redistribucionSalesforce') ?? '') || undefined,
     };
   }
@@ -646,7 +647,7 @@ export async function cambiarEstadoAction(formData: FormData) {
           ? [enviarCorreo(correoPersonalSf, correo.subject, correo.body)]
           : []),
       ]);
-      await marcarBajaCompletada(solicitudFinal, plataformas, sesion.email);
+      await marcarBajaCompletada(solicitudFinal, sesion.email);
     }
     revalidatePath('/');
     return;
@@ -669,7 +670,7 @@ export async function cambiarEstadoAction(formData: FormData) {
         ? [enviarCorreo(correoPersonalJira, correo.subject, correo.body)]
         : []),
     ]);
-    await marcarBajaCompletada(solicitudFinal, plataformas, sesion.email);
+    await marcarBajaCompletada(solicitudFinal, sesion.email);
     revalidatePath('/');
     return;
   }
@@ -730,7 +731,7 @@ export async function cambiarEstadoAction(formData: FormData) {
       );
     }
 
-    await marcarBajaCompletada(solicitudFinal, plataformas, sesion.email);
+    await marcarBajaCompletada(solicitudFinal, sesion.email);
   }
 
   revalidatePath('/');
