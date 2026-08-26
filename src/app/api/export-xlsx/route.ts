@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { PRECIOS } from '@/lib/precios';
 import { getSesion } from '@/lib/session';
+import { calcularAmbitos, puedeAccederAGrupo } from '@/lib/services/acceso.service';
 
 const AZUL     = 'FF1B3A5C';
 const VERDE    = 'FF1A5C38';
@@ -41,25 +42,29 @@ function makeBorder(color = BORDE): any {
 export async function POST(req: NextRequest) {
   try {
   const sesion = await getSesion();
-  if (
-    !sesion ||
-    (sesion.rol !== 'admin' &&
-      sesion.rol !== 'bp' &&
-      sesion.rol !== 'team_leader' &&
-      sesion.rol !== 'mbp' &&
-      sesion.rol !== 'finanzas')
-  ) {
+  if (!sesion) {
     return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
   }
 
-  const { grupoNombre, asesores, metricas, edits, eliminadas: eliminadasArr } = await req.json();
+  const { hojaId, grupoNombre, asesores, metricas, edits, eliminadas: eliminadasArr } =
+    await req.json();
   const portalCreadas = Number(metricas?.portalCreadas ?? 0);
   const salesCloud = Number(metricas?.salesCloud ?? 0);
 
-  if (sesion.rol === 'bp' || sesion.rol === 'team_leader') {
-    const sep = sesion.grupoBp?.indexOf('|') ?? -1;
-    const grupoPropio = sep !== -1 ? sesion.grupoBp!.slice(sep + 1) : undefined;
-    if (!grupoPropio || grupoPropio !== grupoNombre) {
+  // admin y finanzas ven todo; el resto solo los BP que le dan sus cargos
+  // (rol principal + cargos extra), no solo el rol principal.
+  const irrestricto = sesion.rol === 'admin' || sesion.rol === 'finanzas';
+  if (!irrestricto) {
+    const ambitos = calcularAmbitos({
+      email: sesion.email,
+      rol: sesion.rol,
+      grupoBp: sesion.grupoBp,
+      asignaciones: sesion.asignaciones,
+    });
+    if (ambitos.length === 0) {
+      return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
+    }
+    if (!hojaId || !puedeAccederAGrupo(ambitos, hojaId, grupoNombre)) {
       return NextResponse.json({ error: 'No autorizado.' }, { status: 403 });
     }
   }

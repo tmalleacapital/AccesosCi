@@ -6,6 +6,7 @@ import {
   actualizarRolUsuario,
   actualizarSolicitud,
   borrarEdicionesEliminado,
+  borrarReportaA,
   crearAsignacion,
   eliminarAsignacion,
   moverAsignacionesDeGrupo,
@@ -91,6 +92,7 @@ interface AsesorEstaticoRaw {
   nombre: string;
   correo: string;
   estado?: string;
+  tl?: boolean;
   jira?: boolean;
   slack?: boolean;
   sf?: string;
@@ -171,9 +173,31 @@ async function sincronizarPermisosTeamLeader(
       const nombre = await obtenerNombreCorreo(correoLimpio);
       await crearUsuario(correoLimpio, nombre, 'team_leader', grupoBp);
     }
-  } else if (usuario?.rol === 'team_leader') {
+    return;
+  }
+
+  // Deja de ser TL: se le quita el acceso y sus asesores vuelven a quedar
+  // como directos del líder BP (si no, apuntan a alguien que ya no es TL).
+  if (usuario?.rol === 'team_leader') {
     await eliminarUsuario(correoLimpio);
   }
+  await borrarReportaA(correoLimpio);
+}
+
+/**
+ * Revoca por completo el cargo de Team Leader de alguien que deja su BP (por
+ * transferencia o eliminación): le quita la marca T.L, el acceso, y libera a
+ * los asesores que le reportaban.
+ */
+async function revocarTeamLeaderSiAplica(correo: string): Promise<void> {
+  const correoLimpio = correo.trim().toLowerCase();
+  // La marca puede venir de un override o del propio correos.json.
+  const override = await leerEdicionCorreo(correo, 'tl');
+  const estatico = asesoresEstaticos.find((a) => a.correo.toLowerCase() === correoLimpio);
+  const esTL = override !== null ? override === 'true' : estatico?.tl === true;
+  if (!esTL) return;
+  await guardarEdicionCorreo(correo, 'tl', 'false');
+  await sincronizarPermisosTeamLeader(correoLimpio, false);
 }
 
 async function etiquetaHojaGrupo(hojaId: string, grupoNombre: string): Promise<string> {
@@ -465,6 +489,10 @@ export async function eliminarCorreoAction(correo: string): Promise<void> {
     guardarEdicionCorreo(correo, 'eliminado_por', sesion.email),
     guardarEdicionCorreo(correo, 'eliminado_en', new Date().toISOString()),
   ]);
+  // Si era Team Leader, pierde el acceso y libera a sus asesores. Ojo que
+  // "Deshacer" restaura la fila del directorio pero no vuelve a darle el
+  // cargo: hay que marcarlo T.L de nuevo.
+  await revocarTeamLeaderSiAplica(correo);
   revalidatePath('/');
 }
 
@@ -776,6 +804,11 @@ export async function transferirCorreoAction(
       datos.sf,
     );
   }
+
+  // Cambia de BP: deja de ser TL de su BP anterior (y sus asesores quedan
+  // libres), y a él se le limpia a quién reportaba, que era del BP viejo.
+  await revocarTeamLeaderSiAplica(correo);
+  await guardarEdicionCorreo(correo, 'reportaA', '');
 
   const [origenLabel, destinoLabel] = await Promise.all([
     origenHojaId && origenGrupoNombre ? etiquetaHojaGrupo(origenHojaId, origenGrupoNombre) : null,

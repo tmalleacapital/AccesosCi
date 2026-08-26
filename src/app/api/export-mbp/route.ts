@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { PRECIOS } from '@/lib/precios';
 import { getSesion } from '@/lib/session';
+import { calcularAmbitos } from '@/lib/services/acceso.service';
 
 const AZUL     = 'FF1B3A5C';
 const VERDE    = 'FF1A5C38';
@@ -183,11 +184,25 @@ function escribirGrupo(
 export async function POST(req: NextRequest) {
   try {
     const sesion = await getSesion();
-    if (!sesion || (sesion.rol !== 'admin' && sesion.rol !== 'finanzas' && sesion.rol !== 'mbp')) {
+    if (!sesion) {
       return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
     }
 
-    const { hojaLabel, grupos, edits, eliminadas: eliminadasArr } = await req.json();
+    const { hojaId, hojaLabel, grupos, edits, eliminadas: eliminadasArr } = await req.json();
+
+    // Exporta un MBP entero: hay que tener la hoja completa, no un BP suelto.
+    if (sesion.rol !== 'admin' && sesion.rol !== 'finanzas') {
+      const ambitos = calcularAmbitos({
+        email: sesion.email,
+        rol: sesion.rol,
+        grupoBp: sesion.grupoBp,
+        asignaciones: sesion.asignaciones,
+      });
+      const tieneHojaCompleta = ambitos.some((a) => a.hojaId === hojaId && !a.grupoNombre);
+      if (!tieneHojaCompleta) {
+        return NextResponse.json({ error: 'No autorizado.' }, { status: 403 });
+      }
+    }
     const eliminadas = new Set<string>(eliminadasArr ?? []);
 
     const wb = new ExcelJS.Workbook();

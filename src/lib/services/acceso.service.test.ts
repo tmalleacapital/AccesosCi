@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { calcularAmbitos, puedeVerAsesor, resolverAmbitoPorHoja } from './acceso.service';
+import {
+  calcularAmbitos,
+  puedeAccederAGrupo,
+  puedeVerAsesor,
+  resolverAmbitoPorHoja,
+} from './acceso.service';
 
 const YO = 'djerez@capitalinteligente.cl';
 
@@ -145,5 +150,41 @@ describe('puedeVerAsesor', () => {
   it('compara correos sin distinguir mayúsculas', () => {
     expect(puedeVerAsesor(YO, 'DJEREZ@capitalinteligente.CL', undefined)).toBe(true);
     expect(puedeVerAsesor(YO, 'otro@x.cl', 'DJerez@CapitalInteligente.cl')).toBe(true);
+  });
+});
+
+describe('puedeAccederAGrupo', () => {
+  const ambitos = [
+    { hojaId: 'h1', grupoNombre: 'BP A' },
+    { hojaId: 'h2' },
+    { hojaId: 'h3', grupoNombre: 'BP C', soloDeTeamLeader: YO },
+  ];
+
+  it('deja pasar el BP puntual que tiene asignado', () => {
+    expect(puedeAccederAGrupo(ambitos, 'h1', 'BP A')).toBe(true);
+  });
+
+  it('bloquea otro BP de la misma hoja', () => {
+    expect(puedeAccederAGrupo(ambitos, 'h1', 'BP B')).toBe(false);
+  });
+
+  it('con el MBP completo deja pasar cualquier BP de esa hoja', () => {
+    expect(puedeAccederAGrupo(ambitos, 'h2', 'cualquier BP')).toBe(true);
+  });
+
+  it('bloquea una hoja que no tiene asignada', () => {
+    expect(puedeAccederAGrupo(ambitos, 'h9', 'BP A')).toBe(false);
+  });
+
+  it('un Team Leader sí puede acceder a su BP (su vista va acotada aparte)', () => {
+    expect(puedeAccederAGrupo(ambitos, 'h3', 'BP C')).toBe(true);
+  });
+
+  it('sin ámbitos no accede a nada', () => {
+    expect(puedeAccederAGrupo([], 'h1', 'BP A')).toBe(false);
+  });
+
+  it('no confunde un mismo nombre de BP en otra hoja', () => {
+    expect(puedeAccederAGrupo(ambitos, 'h9', 'BP A')).toBe(false);
   });
 });

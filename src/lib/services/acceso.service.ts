@@ -96,6 +96,21 @@ export function resolverAmbitoPorHoja(
 }
 
 /**
+ * Si estos ámbitos alcanzan para operar sobre un BP concreto. No distingue si
+ * la vista queda acotada a un Team Leader — eso lo resuelve puedeVerAsesor()
+ * fila a fila.
+ */
+export function puedeAccederAGrupo(
+  ambitos: Ambito[],
+  hojaId: string,
+  grupoNombre: string,
+): boolean {
+  return ambitos.some(
+    (a) => a.hojaId === hojaId && (!a.grupoNombre || a.grupoNombre === grupoNombre),
+  );
+}
+
+/**
  * Dentro de un BP ya autorizado, decide si se ve a un asesor puntual.
  * `soloDeTeamLeader` null = sin restricción (líder BP o MBP).
  */

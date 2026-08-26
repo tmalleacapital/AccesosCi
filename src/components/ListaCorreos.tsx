@@ -126,6 +126,7 @@ async function exportarGrupoXlsx(
   grupo: Grupo,
   edits: Record<string, string>,
   eliminadas: Set<string>,
+  hojaId: string,
 ) {
   const editsFiltrados = filtrarEdits(grupo.asesores.map((a) => a.correo), edits);
 
@@ -133,6 +134,7 @@ async function exportarGrupoXlsx(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      hojaId,
       grupoNombre: grupo.nombre,
       asesores: grupo.asesores,
       metricas: metricasParaExport(grupo, edits, eliminadas),
@@ -156,6 +158,35 @@ async function exportarGrupoXlsx(
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Recorta los grupos de una hoja a lo que la persona realmente puede ver.
+ * Sin esto, los exports arman el archivo desde los datos crudos y se llevan
+ * gente que en pantalla no aparece.
+ */
+function recortarGruposPorAmbito<T extends Grupo>(
+  grupos: T[],
+  hojaId: string,
+  ambitoPorHoja: Map<string, Map<string, string | null> | null> | undefined,
+  edits: Record<string, string>,
+): T[] {
+  if (!ambitoPorHoja) return grupos;
+  const permitidos = ambitoPorHoja.get(hojaId);
+  if (permitidos === undefined) return [];
+  if (permitidos === null) return grupos;
+  return grupos
+    .filter((g) => permitidos.has(g.nombre))
+    .map((g) => {
+      const soloDeTL = permitidos.get(g.nombre) ?? null;
+      if (!soloDeTL) return g;
+      return {
+        ...g,
+        asesores: g.asesores.filter((a) =>
+          puedeVerAsesor(soloDeTL, a.correo, edits[estKey(a.correo, 'reportaA')] ?? a.reportaA),
+        ),
+      };
+    });
+}
+
 async function exportarHojaXlsx(
   hoja: { id: string; nombre: string; grupos: Grupo[] },
   gruposExtra: GrupoExtra[],
@@ -164,6 +195,7 @@ async function exportarHojaXlsx(
   edits: Record<string, string>,
   eliminadas: Set<string>,
   etiqueta: string,
+  ambitoPorHoja?: Map<string, Map<string, string | null> | null>,
 ) {
   const ocultos = new Set(
     gruposOcultos.filter((g) => g.hojaId === hoja.id).map((g) => g.nombre),
@@ -200,15 +232,17 @@ async function exportarHojaXlsx(
     },
   );
 
-  const todosCorreos = todosGrupos.flatMap((g) => g.asesores.map((a) => a.correo));
+  const gruposVisibles = recortarGruposPorAmbito(todosGrupos, hoja.id, ambitoPorHoja, edits);
+  const todosCorreos = gruposVisibles.flatMap((g) => g.asesores.map((a) => a.correo));
   const editsFiltrados = filtrarEdits(todosCorreos, edits);
 
   const res = await fetch('/api/export-mbp', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      hojaId: hoja.id,
       hojaLabel: etiqueta,
-      grupos: todosGrupos.map((g) => ({
+      grupos: gruposVisibles.map((g) => ({
         grupoNombre: g.nombre,
         asesores: g.asesores,
         metricas: metricasParaExport(g, edits, eliminadas),
@@ -240,6 +274,7 @@ async function exportarTodosMbpXlsx(
   miembrosExtra: MiembroExtra[],
   edits: Record<string, string>,
   eliminadas: Set<string>,
+  ambitoPorHoja?: Map<string, Map<string, string | null> | null>,
 ) {
   const hojasPayload = hojas.map((hoja) => {
     const ocultos = new Set(
@@ -277,7 +312,10 @@ async function exportarTodosMbpXlsx(
       },
     );
 
-    return { hojaLabel: etiquetaHoja(hoja.nombre), grupos: todosGrupos };
+    return {
+      hojaLabel: etiquetaHoja(hoja.nombre),
+      grupos: recortarGruposPorAmbito(todosGrupos, hoja.id, ambitoPorHoja, edits),
+    };
   });
 
   const todosCorreos = hojasPayload.flatMap((h) => h.grupos.flatMap((g) => g.asesores.map((a) => a.correo)));
@@ -1226,7 +1264,7 @@ function TablaGrupo({
           onClick={async () => {
             setExportando(true);
             try {
-              await exportarGrupoXlsx(grupo, edits, eliminadas);
+              await exportarGrupoXlsx(grupo, edits, eliminadas, hojaId);
             } finally {
               setExportando(false);
             }
@@ -2267,6 +2305,7 @@ export function ListaCorreos({
                   miembrosExtra,
                   edits,
                   eliminadas,
+                  restringido ? ambitoPorHoja : undefined,
                 );
               } finally {
                 setExportandoTodos(false);
@@ -2329,6 +2368,7 @@ export function ListaCorreos({
                         edits,
                         eliminadas,
                         etiqueta,
+                        restringido ? ambitoPorHoja : undefined,
                       );
                     } finally {
                       setExportandoHojaId(null);

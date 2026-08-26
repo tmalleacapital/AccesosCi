@@ -400,6 +400,20 @@ export async function transferirMiembroExtra(
   if (error) throw new Error(`transferirMiembroExtra: ${error.message}`);
 }
 
+/**
+ * Deja sin Team Leader a todos los que le reportaban a `correoTl`. Se usa al
+ * quitarle la marca T.L, transferirlo o eliminarlo: sin esto quedan apuntando
+ * a alguien que ya no es TL de su BP.
+ */
+export async function borrarReportaA(correoTl: string): Promise<void> {
+  const { error } = await getSupabase()
+    .from('correos_edits')
+    .delete()
+    .eq('campo', 'reportaA')
+    .ilike('valor', correoTl.trim());
+  if (error) throw new Error(`borrarReportaA: ${error.message}`);
+}
+
 export async function borrarEdicionesEliminado(correo: string): Promise<void> {
   const { error } = await getSupabase()
     .from('correos_edits')
