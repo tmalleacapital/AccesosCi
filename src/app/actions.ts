@@ -59,7 +59,6 @@ import type {
   DatosSolicitud,
   EmpresaId,
   EstadoSolicitud,
-  Plataforma,
   Rol,
   RolAsignable,
   TipoSolicitud,

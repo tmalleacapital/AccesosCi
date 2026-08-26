@@ -1833,7 +1833,9 @@ export function ListaCorreos({
   incluirEstaticos?: boolean;
   empresaActiva?: EmpresaId;
 }) {
-  const hojasEstaticas = incluirEstaticos ? data.hojas : [];
+  // Memo propio: sin esto el `[]` del caso falso es un array nuevo en cada
+  // render y recalcula todo lo que dependa de él.
+  const hojasEstaticas = useMemo(() => (incluirEstaticos ? data.hojas : []), [incluirEstaticos]);
 
   const todasHojas = useMemo(
     () => [
@@ -2066,7 +2068,7 @@ export function ListaCorreos({
       result.push({ hojaId: g.hojaId, hojaLabel, grupoNombre: g.nombre });
     }
     return result;
-  }, [gruposOcultos, gruposExtra, todasHojas]);
+  }, [gruposOcultos, gruposExtra, todasHojas, hojasEstaticas]);
 
   function handleEdit(
     correoOrig: string,
