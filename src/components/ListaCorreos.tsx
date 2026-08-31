@@ -871,7 +871,7 @@ function FilaAsesor({
             <select
               value={reportaA}
               onChange={(e) => onEdit('reportaA', e.target.value, reportaA)}
-              className="w-full max-w-[140px] truncate rounded-md border border-border bg-background px-1.5 py-0.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="w-full max-w-[112px] truncate rounded-md border border-border bg-background px-1.5 py-0.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
               <option value="">—</option>
               {teamLeaders.map((t) => (
@@ -1286,9 +1286,9 @@ function TablaGrupo({
         <table className="w-full min-w-[720px] table-fixed text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-left">
-              <th className="w-[22%] px-3 py-2 font-semibold text-foreground">Nombre</th>
+              <th className="w-[19%] px-3 py-2 font-semibold text-foreground">Nombre</th>
               <th className="px-3 py-2 font-semibold text-foreground">Correo</th>
-              <th className="w-[108px] px-3 py-2 font-semibold text-foreground">Estado</th>
+              <th className="w-[96px] px-3 py-2 font-semibold text-foreground">Estado</th>
               {columnas.jira && (
                 <th className="w-10 px-3 py-2 text-center font-semibold text-foreground">Jira</th>
               )}
@@ -1301,12 +1301,12 @@ function TablaGrupo({
                 <th className="w-[95px] px-3 py-2 font-semibold text-foreground">Nodia</th>
               )}
               {columnas.reportaA && (
-                <th className="w-[150px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
+                <th className="w-[124px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
                   Reporta a
                 </th>
               )}
               {columnas.fecha && (
-                <th className="w-[130px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
+                <th className="w-[112px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
                   Fecha baja
                 </th>
               )}
