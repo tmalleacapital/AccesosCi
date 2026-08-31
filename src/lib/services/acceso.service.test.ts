@@ -4,6 +4,7 @@ import {
   puedeAccederAGrupo,
   puedeVerAsesor,
   resolverAmbitoPorHoja,
+  calcularCargos,
 } from './acceso.service';
 
 const YO = 'djerez@capitalinteligente.cl';
@@ -186,5 +187,48 @@ describe('puedeAccederAGrupo', () => {
 
   it('no confunde un mismo nombre de BP en otra hoja', () => {
     expect(puedeAccederAGrupo(ambitos, 'h9', 'BP A')).toBe(false);
+  });
+});
+
+describe('calcularCargos', () => {
+  it('devuelve el cargo del rol principal conservando el rol', () => {
+    expect(calcularCargos({ email: YO, rol: 'bp', grupoBp: 'h1|BP A' })).toEqual([
+      { rol: 'bp', hojaId: 'h1', grupoNombre: 'BP A' },
+    ]);
+  });
+
+  it('un mbp no lleva grupoNombre', () => {
+    expect(calcularCargos({ email: YO, rol: 'mbp', grupoBp: 'h1' })).toEqual([
+      { rol: 'mbp', hojaId: 'h1' },
+    ]);
+  });
+
+  it('suma los cargos extra al principal', () => {
+    expect(
+      calcularCargos({
+        email: YO,
+        rol: 'mbp',
+        grupoBp: 'h1',
+        asignaciones: [{ rol: 'bp', hojaId: 'h1', grupoNombre: 'BP A' }],
+      }),
+    ).toEqual([
+      { rol: 'mbp', hojaId: 'h1' },
+      { rol: 'bp', hojaId: 'h1', grupoNombre: 'BP A' },
+    ]);
+  });
+
+  it('una asignación mbp descarta el grupoNombre', () => {
+    expect(
+      calcularCargos({
+        email: YO,
+        rol: 'solicitante',
+        asignaciones: [{ rol: 'mbp', hojaId: 'h1', grupoNombre: 'ignorar' }],
+      }),
+    ).toEqual([{ rol: 'mbp', hojaId: 'h1' }]);
+  });
+
+  it('admin/finanzas no aportan cargos de estructura', () => {
+    expect(calcularCargos({ email: YO, rol: 'admin' })).toEqual([]);
+    expect(calcularCargos({ email: YO, rol: 'finanzas' })).toEqual([]);
   });
 });

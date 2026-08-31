@@ -26,7 +26,7 @@ import { HistorialPanel } from '@/components/HistorialPanel';
 import { AutoRefresh } from '@/components/AutoRefresh';
 import { EmpresaSwitcher } from '@/components/EmpresaSwitcher';
 import { EMPRESA_DEFAULT, normalizarEmpresaId } from '@/lib/empresas';
-import { calcularAmbitos } from '@/lib/services/acceso.service';
+import { calcularAmbitos, calcularCargos } from '@/lib/services/acceso.service';
 
 export default async function Home({
   searchParams,
@@ -77,9 +77,27 @@ export default async function Home({
     esAdmin || tieneAmbitos || esFinanzas ? leerGruposOcultos() : Promise.resolve([]),
     esEquipo || tieneAmbitos || esFinanzas ? leerMiembrosExtra() : Promise.resolve([]),
     esAdmin || tieneAmbitos || esFinanzas ? leerHojasExtra() : Promise.resolve([]),
-    esAdmin ? leerUsuarios() : Promise.resolve([]),
+    esAdmin || tieneAmbitos || esFinanzas ? leerUsuarios() : Promise.resolve([]),
     esAdmin ? leerHistorial() : Promise.resolve([]),
   ]);
+
+  // Para la columna "Reporta a": los líderes de cada MBP/BP y los Team Leaders.
+  // Los TL se sacan de acá y no solo de la marca T.L de la tabla, porque puede
+  // haber un TL que no figure como miembro del BP que lidera.
+  const lideres = usuarios.flatMap((u) =>
+    calcularCargos({
+      email: u.email,
+      rol: u.rol,
+      grupoBp: u.grupoBp,
+      asignaciones: u.asignaciones,
+    }).map((c) => ({
+      correo: u.email,
+      nombre: u.nombre,
+      tipo: (c.rol === 'team_leader' ? 'tl' : c.rol) as 'mbp' | 'bp' | 'tl',
+      hojaId: c.hojaId,
+      grupoNombre: c.grupoNombre,
+    })),
+  );
 
   const plataformasActivas = plataformas.filter((p) => p.activa);
   const solicitudes = esEquipo
@@ -221,6 +239,7 @@ export default async function Home({
                         soloLectura={!esAdmin}
                         esAdmin={esAdmin}
                         filtroAmbitos={esAdmin || esFinanzas ? undefined : ambitos}
+                        lideres={lideres}
                         incluirEstaticos={incluirEstaticosCorreos}
                         empresaActiva={empresaActiva}
                       />

@@ -22,46 +22,55 @@ export interface AccesoInput {
   asignaciones?: { rol: RolAsignable; hojaId: string; grupoNombre?: string }[];
 }
 
-function ambitoDe(
-  rol: RolAsignable,
-  hojaId: string,
-  grupoNombre: string | undefined,
-  email: string,
-): Ambito {
-  if (rol === 'mbp') return { hojaId };
-  if (rol === 'team_leader') return { hojaId, grupoNombre, soloDeTeamLeader: email };
-  return { hojaId, grupoNombre };
+/** Un cargo concreto: qué es la persona y sobre qué MBP/BP. */
+export interface Cargo {
+  rol: RolAsignable;
+  hojaId: string;
+  /** Ausente cuando rol es 'mbp': el cargo cubre la hoja completa. */
+  grupoNombre?: string;
 }
 
 /**
- * Ámbitos visibles para una persona: la unión de su rol principal y de sus
- * cargos extra. Ej. cfigueroa es MBP de Forza Capital y además líder del "BP
- * Forza Capital" que vive dentro de ese mismo MBP.
+ * Todos los cargos de una persona: su rol principal más sus cargos extra.
+ * Ej. cfigueroa es MBP de Forza Capital y además líder del "BP Forza Capital"
+ * que vive dentro de ese mismo MBP.
  */
-export function calcularAmbitos(input: AccesoInput): Ambito[] {
-  const ambitos: Ambito[] = [];
+export function calcularCargos(input: AccesoInput): Cargo[] {
+  const cargos: Cargo[] = [];
 
   if (input.rol === 'mbp' && input.grupoBp) {
-    ambitos.push({ hojaId: input.grupoBp });
+    cargos.push({ rol: 'mbp', hojaId: input.grupoBp });
   } else if ((input.rol === 'bp' || input.rol === 'team_leader') && input.grupoBp) {
     const sep = input.grupoBp.indexOf('|');
     if (sep !== -1) {
-      ambitos.push(
-        ambitoDe(
-          input.rol,
-          input.grupoBp.slice(0, sep),
-          input.grupoBp.slice(sep + 1),
-          input.email,
-        ),
-      );
+      cargos.push({
+        rol: input.rol,
+        hojaId: input.grupoBp.slice(0, sep),
+        grupoNombre: input.grupoBp.slice(sep + 1),
+      });
     }
   }
 
   for (const a of input.asignaciones ?? []) {
-    ambitos.push(ambitoDe(a.rol, a.hojaId, a.grupoNombre, input.email));
+    cargos.push(
+      a.rol === 'mbp'
+        ? { rol: 'mbp', hojaId: a.hojaId }
+        : { rol: a.rol, hojaId: a.hojaId, grupoNombre: a.grupoNombre },
+    );
   }
 
-  return ambitos;
+  return cargos;
+}
+
+/** Los ámbitos visibles que se desprenden de esos cargos. */
+export function calcularAmbitos(input: AccesoInput): Ambito[] {
+  return calcularCargos(input).map((c) =>
+    c.rol === 'mbp'
+      ? { hojaId: c.hojaId }
+      : c.rol === 'team_leader'
+        ? { hojaId: c.hojaId, grupoNombre: c.grupoNombre, soloDeTeamLeader: input.email }
+        : { hojaId: c.hojaId, grupoNombre: c.grupoNombre },
+  );
 }
 
 /**

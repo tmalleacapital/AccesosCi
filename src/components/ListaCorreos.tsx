@@ -48,6 +48,29 @@ interface Grupo {
   extraId?: string;
 }
 
+/** Alguien con cargo sobre un MBP o BP, elegible en la columna "Reporta a". */
+interface Lider {
+  correo: string;
+  nombre: string;
+  tipo: 'mbp' | 'bp' | 'tl';
+  hojaId: string;
+  /** Ausente en los líderes de MBP. */
+  grupoNombre?: string;
+}
+
+/** Una opción del selector "Reporta a". */
+interface OpcionReportaA {
+  correo: string;
+  nombre: string;
+  tipo: 'mbp' | 'bp' | 'tl';
+}
+
+const ETIQUETA_TIPO_LIDER: Record<OpcionReportaA['tipo'], string> = {
+  mbp: 'MBP',
+  bp: 'BP',
+  tl: 'Team Leaders',
+};
+
 interface Hoja {
   id: string;
   nombre: string;
@@ -698,7 +721,7 @@ function FilaAsesor({
   asesor,
   columnas,
   edits,
-  teamLeaders = [],
+  opcionesReportaA = [],
   onEdit,
   onEliminar,
   onTransferir,
@@ -708,8 +731,8 @@ function FilaAsesor({
   asesor: Asesor;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean; reportaA: boolean };
   edits: Record<string, string>;
-  /** Team Leaders del mismo BP, para elegir a cuál reporta este asesor. */
-  teamLeaders?: { correo: string; nombre: string }[];
+  /** A quién puede reportar este asesor: líder del MBP, del BP, o un Team Leader. */
+  opcionesReportaA?: OpcionReportaA[];
   onEdit: (campo: string, valor: string, valorAnterior: string) => void;
   onEliminar: () => void;
   onTransferir: (datos: TransferirDatos) => void;
@@ -857,30 +880,45 @@ function FilaAsesor({
         </td>
       )}
 
-      {/* Reporta a — a qué Team Leader del BP pertenece este asesor */}
+      {/* Reporta a — líder del MBP, del BP, o Team Leader */}
       {columnas.reportaA && (
         <td className="px-3 py-2">
-          {tl ? (
-            <span className="text-xs text-muted-foreground/40">—</span>
-          ) : soloLectura ? (
-            <span className="text-xs text-muted-foreground">
-              {teamLeaders.find((t) => t.correo.toLowerCase() === reportaA.toLowerCase())?.nombre ??
-                '—'}
-            </span>
-          ) : (
-            <select
-              value={reportaA}
-              onChange={(e) => onEdit('reportaA', e.target.value, reportaA)}
-              className="w-full max-w-[112px] truncate rounded-md border border-border bg-background px-1.5 py-0.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              <option value="">—</option>
-              {teamLeaders.map((t) => (
-                <option key={t.correo} value={t.correo}>
-                  {t.nombre}
-                </option>
-              ))}
-            </select>
-          )}
+          {(() => {
+            const propias = opcionesReportaA.filter(
+              (o) => o.correo.toLowerCase() !== orig.toLowerCase(),
+            );
+            const elegida = propias.find((o) => o.correo.toLowerCase() === reportaA.toLowerCase());
+            if (soloLectura) {
+              return (
+                <span className="text-xs text-muted-foreground">
+                  {elegida ? `${elegida.nombre} · ${ETIQUETA_TIPO_LIDER[elegida.tipo]}` : '—'}
+                </span>
+              );
+            }
+            return (
+              <select
+                value={elegida ? elegida.correo : ''}
+                onChange={(e) => onEdit('reportaA', e.target.value, reportaA)}
+                title={elegida ? `${elegida.nombre} · ${ETIQUETA_TIPO_LIDER[elegida.tipo]}` : undefined}
+                className="w-full max-w-[112px] truncate rounded-md border border-border bg-background px-1.5 py-0.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                <option value="">—</option>
+                {(['mbp', 'bp', 'tl'] as const).map((tipo) => {
+                  const grupoOpts = propias.filter((o) => o.tipo === tipo);
+                  if (grupoOpts.length === 0) return null;
+                  return (
+                    <optgroup key={tipo} label={ETIQUETA_TIPO_LIDER[tipo]}>
+                      {grupoOpts.map((o) => (
+                        <option key={o.correo} value={o.correo}>
+                          {o.nombre}
+                        </option>
+                      ))}
+                    </optgroup>
+                  );
+                })}
+              </select>
+            );
+          })()}
         </td>
       )}
 
@@ -1179,6 +1217,7 @@ function TablaGrupo({
   grupo,
   columnas,
   edits,
+  lideres = [],
   eliminadas,
   onEdit,
   onEditMetrica,
@@ -1192,6 +1231,7 @@ function TablaGrupo({
   grupo: Grupo;
   columnas: { jira: boolean; slack: boolean; sf: boolean; fecha: boolean; reportaA: boolean };
   edits: Record<string, string>;
+  lideres?: Lider[];
   eliminadas: Set<string>;
   onEdit: (
     correoOrig: string,
@@ -1228,10 +1268,35 @@ function TablaGrupo({
       return nombreA.localeCompare(nombreB, 'es', { sensitivity: 'base' });
     });
 
-  // Un BP puede tener varios Team Leaders; cada asesor se asigna a uno de ellos.
-  const teamLeaders = asesoresVisibles
-    .filter((a) => (edits[estKey(a.correo, 'tl')] ?? (a.tl ? 'true' : 'false')) === 'true')
-    .map((a) => ({ correo: a.correo, nombre: edits[estKey(a.correo, 'nombre')] ?? a.nombre }));
+  // Opciones de "Reporta a": el líder del MBP, el/los líderes de este BP y sus
+  // Team Leaders (un BP puede tener varios). Se deduplica por correo dando
+  // prioridad al cargo más alto.
+  const opcionesReportaA: OpcionReportaA[] = (() => {
+    const porCorreo = new Map<string, OpcionReportaA>();
+    // Si alguien es líder del MBP y además de este BP, se muestra como BP: es
+    // su cargo directo sobre este equipo.
+    const especificidad = { bp: 3, tl: 2, mbp: 1 };
+    const poner = (o: OpcionReportaA) => {
+      const k = o.correo.toLowerCase();
+      const actual = porCorreo.get(k);
+      if (!actual || especificidad[o.tipo] > especificidad[actual.tipo]) porCorreo.set(k, o);
+    };
+    for (const l of lideres) {
+      if (l.hojaId !== hojaId) continue;
+      // Un cargo de MBP cubre toda la hoja; los de BP/TL son de este BP.
+      if (l.tipo !== 'mbp' && l.grupoNombre !== grupo.nombre) continue;
+      poner({ correo: l.correo, nombre: l.nombre, tipo: l.tipo });
+    }
+    for (const a of asesoresVisibles) {
+      if ((edits[estKey(a.correo, 'tl')] ?? (a.tl ? 'true' : 'false')) !== 'true') continue;
+      poner({ correo: a.correo, nombre: edits[estKey(a.correo, 'nombre')] ?? a.nombre, tipo: 'tl' });
+    }
+    // Se ordenan de mayor a menor jerarquía para leerlos en orden natural.
+    const jerarquia = { mbp: 3, bp: 2, tl: 1 };
+    return [...porCorreo.values()].sort(
+      (x, y) => jerarquia[y.tipo] - jerarquia[x.tipo] || x.nombre.localeCompare(y.nombre, 'es'),
+    );
+  })();
 
   return (
     <div className="space-y-2">
@@ -1355,7 +1420,7 @@ function TablaGrupo({
                 asesor={a}
                 columnas={columnas}
                 edits={edits}
-                teamLeaders={teamLeaders}
+                opcionesReportaA={opcionesReportaA}
                 onEdit={(campo, valor, anterior) =>
                   onEdit(a.correo, campo, valor, anterior, hojaId, grupo.nombre)
                 }
@@ -1851,6 +1916,7 @@ export function ListaCorreos({
   soloLectura = false,
   esAdmin = false,
   filtroAmbitos,
+  lideres = [],
   incluirEstaticos = true,
   empresaActiva = 'capital_inteligente',
 }: {
@@ -1867,6 +1933,8 @@ export function ListaCorreos({
    * asesores de ese TL. `undefined` = sin restricción (admin/finanzas).
    */
   filtroAmbitos?: Ambito[];
+  /** Líderes de MBP y de BP, para poder elegirlos en "Reporta a". */
+  lideres?: Lider[];
   /** Falso cuando se está viendo una empresa sin estructura estática (ej. Capital Prime). */
   incluirEstaticos?: boolean;
   empresaActiva?: EmpresaId;
