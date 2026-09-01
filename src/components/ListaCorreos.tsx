@@ -2514,6 +2514,7 @@ export function ListaCorreos({
               grupo={g}
               columnas={columnas}
               edits={edits}
+              lideres={lideres}
               eliminadas={eliminadas}
               onEdit={handleEdit}
               onEditMetrica={(label, valor) => handleEditMetrica(g.nombre, label, valor)}
