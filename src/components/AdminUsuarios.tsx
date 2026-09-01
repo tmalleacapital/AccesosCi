@@ -541,6 +541,7 @@ export function AdminUsuarios({
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [eliminarPending, setEliminarPending] = useState(false);
   const [gestionandoCargos, setGestionandoCargos] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState('');
 
   const hojas = useHojasDisponibles(hojasExtra, gruposExtra);
 
@@ -548,6 +549,14 @@ export function AdminUsuarios({
     () => [...usuarios].sort((a, b) => a.nombre.localeCompare(b.nombre)),
     [usuarios],
   );
+
+  const usuariosFiltrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return usuariosOrdenados;
+    return usuariosOrdenados.filter(
+      (u) => u.nombre.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
+    );
+  }, [usuariosOrdenados, busqueda]);
 
   async function handleCambiarRol(email: string, rol: Rol) {
     const usuario = usuarios.find((u) => u.email === email);
@@ -604,18 +613,29 @@ export function AdminUsuarios({
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          {usuarios.length} usuario{usuarios.length !== 1 ? 's' : ''}
+          {usuariosFiltrados.length === usuarios.length
+            ? `${usuarios.length} usuario${usuarios.length !== 1 ? 's' : ''}`
+            : `${usuariosFiltrados.length} de ${usuarios.length} usuarios`}
         </p>
-        <button
-          type="button"
-          onClick={() => setMostrandoModal(true)}
-          className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground hover:bg-muted"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Nuevo usuario
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            type="search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por nombre o correo…"
+            className="w-56 rounded-md border border-border bg-background px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          <button
+            type="button"
+            onClick={() => setMostrandoModal(true)}
+            className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground hover:bg-muted"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Nuevo usuario
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -641,7 +661,14 @@ export function AdminUsuarios({
             </tr>
           </thead>
           <tbody>
-            {usuariosOrdenados.map((u) => (
+            {usuariosFiltrados.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-3 py-6 text-center text-sm text-muted-foreground">
+                  Sin resultados para «{busqueda}».
+                </td>
+              </tr>
+            )}
+            {usuariosFiltrados.map((u) => (
               <FilaUsuario
                 key={u.email}
                 usuario={u}
