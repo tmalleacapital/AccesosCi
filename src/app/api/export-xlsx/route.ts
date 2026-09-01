@@ -46,10 +46,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
   }
 
-  const { hojaId, grupoNombre, asesores, metricas, edits, eliminadas: eliminadasArr } =
+  const { hojaId, grupoNombre, asesores, edits, eliminadas: eliminadasArr } =
     await req.json();
-  const portalCreadas = Number(metricas?.portalCreadas ?? 0);
-  const salesCloud = Number(metricas?.salesCloud ?? 0);
 
   // admin y finanzas ven todo; el resto solo los BP que le dan sus cargos
   // (rol principal + cargos extra), no solo el rol principal.
@@ -136,7 +134,7 @@ export async function POST(req: NextRequest) {
     const cS  = slack ? PRECIOS.slack   : 0;
     const cSF = sf === 'Cloud' ? PRECIOS.sfCloud : sf === 'Portal' ? PRECIOS.sfPortal : 0;
     const cT  = cG + cJ + cS + cSF;
-    totG += cG; totJ += cJ; totS += cS;
+    totG += cG; totJ += cJ; totS += cS; totSF += cSF; totTotal += cT;
 
     const par = rowIdx % 2 === 0;
     const row = ws.addRow([
@@ -168,11 +166,6 @@ export async function POST(req: NextRequest) {
     });
     rowIdx++;
   }
-
-  // El total de Salesforce refleja las cuentas Portal creadas + SalesCloud
-  // (no las filas activas en este momento).
-  totSF = portalCreadas * PRECIOS.sfPortal + salesCloud * PRECIOS.sfCloud;
-  totTotal = totG + totJ + totS + totSF;
 
   const filaTotal = ws.addRow([
     'TOTAL', '', '', '', '', '', '', '', '',

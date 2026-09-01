@@ -67,7 +67,6 @@ function escribirGrupo(
   ws: ExcelJS.Worksheet,
   grupoNombre: string,
   asesores: Asesor[],
-  metricas: { portalCreadas?: number; salesCloud?: number } | undefined,
   edits: Record<string, string>,
   eliminadas: Set<string>,
 ) {
@@ -120,7 +119,7 @@ function escribirGrupo(
     const cS  = slack ? PRECIOS.slack   : 0;
     const cSF = sf === 'Cloud' ? PRECIOS.sfCloud : sf === 'Portal' ? PRECIOS.sfPortal : 0;
     const cT  = cG + cJ + cS + cSF;
-    totG += cG; totJ += cJ; totS += cS;
+    totG += cG; totJ += cJ; totS += cS; totSF += cSF; totTotal += cT;
 
     const par = rowIdx % 2 === 0;
     const row = ws.addRow([
@@ -151,11 +150,6 @@ function escribirGrupo(
     });
     rowIdx++;
   }
-
-  // El total de Salesforce refleja las cuentas Portal creadas + SalesCloud
-  // (no las filas activas en este momento).
-  totSF = Number(metricas?.portalCreadas ?? 0) * PRECIOS.sfPortal + Number(metricas?.salesCloud ?? 0) * PRECIOS.sfCloud;
-  totTotal = totG + totJ + totS + totSF;
 
   // Fila total
   const filaTotal = ws.addRow([
@@ -212,12 +206,11 @@ export async function POST(req: NextRequest) {
     const gruposArr = grupos as {
       grupoNombre: string;
       asesores: Asesor[];
-      metricas?: { portalCreadas?: number; salesCloud?: number };
     }[];
 
     for (let i = 0; i < gruposArr.length; i++) {
-      const { grupoNombre, asesores, metricas } = gruposArr[i];
-      escribirGrupo(ws, grupoNombre, asesores, metricas, edits, eliminadas);
+      const { grupoNombre, asesores } = gruposArr[i];
+      escribirGrupo(ws, grupoNombre, asesores, edits, eliminadas);
 
       // 3 filas vacías entre grupos (no después del último)
       if (i < gruposArr.length - 1) {

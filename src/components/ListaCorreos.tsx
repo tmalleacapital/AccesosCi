@@ -133,18 +133,6 @@ function filtrarEdits(correos: string[], edits: Record<string, string>): Record<
   return out;
 }
 
-function metricasParaExport(
-  grupo: Grupo,
-  edits: Record<string, string>,
-  eliminadas: Set<string>,
-): { portalCreadas: number; salesCloud: number } {
-  const metricas = calcularMetricasDinamicas(grupo, edits, eliminadas);
-  return {
-    portalCreadas: metricas.find((m) => m.label === 'Cuentas Portal Creadas')?.valor ?? 0,
-    salesCloud: metricas.find((m) => m.label === 'Cuentas SalesCloud')?.valor ?? 0,
-  };
-}
-
 async function exportarGrupoXlsx(
   grupo: Grupo,
   edits: Record<string, string>,
@@ -160,7 +148,6 @@ async function exportarGrupoXlsx(
       hojaId,
       grupoNombre: grupo.nombre,
       asesores: grupo.asesores,
-      metricas: metricasParaExport(grupo, edits, eliminadas),
       edits: editsFiltrados,
       eliminadas: [...eliminadas],
     }),
@@ -268,7 +255,6 @@ async function exportarHojaXlsx(
       grupos: gruposVisibles.map((g) => ({
         grupoNombre: g.nombre,
         asesores: g.asesores,
-        metricas: metricasParaExport(g, edits, eliminadas),
       })),
       edits: editsFiltrados,
       eliminadas: [...eliminadas],
@@ -353,7 +339,6 @@ async function exportarTodosMbpXlsx(
         grupos: h.grupos.map((g) => ({
           grupoNombre: g.nombre,
           asesores: g.asesores,
-          metricas: metricasParaExport(g, edits, eliminadas),
         })),
       })),
       edits: editsFiltrados,
