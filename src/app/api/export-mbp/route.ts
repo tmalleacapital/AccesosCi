@@ -59,7 +59,7 @@ const COLS = [
 
 type Asesor = {
   correo: string; nombre: string; estado?: string;
-  jira?: boolean; slack?: boolean; sf?: string;
+  jira?: boolean; slack?: boolean; sf?: boolean;
   fechaEliminacion?: string; esDinamico?: boolean;
 };
 
@@ -111,13 +111,13 @@ function escribirGrupo(
     const estado = edits[estKey(a.correo, 'estado')]           ?? a.estado           ?? 'Activo';
     const jira   = (edits[estKey(a.correo, 'jira')]            ?? (a.jira  ? 'true' : 'false')) === 'true';
     const slack  = (edits[estKey(a.correo, 'slack')]           ?? (a.slack ? 'true' : 'false')) === 'true';
-    const sf     = edits[estKey(a.correo, 'sf')]               ?? a.sf               ?? '';
+    const sf     = (edits[estKey(a.correo, 'sf')]              ?? (a.sf ? 'true' : 'false')) === 'true';
     const fecha  = edits[estKey(a.correo, 'fechaEliminacion')] ?? a.fechaEliminacion ?? '';
 
     const cG  = PRECIOS.google;
-    const cJ  = jira  ? PRECIOS.jira    : 0;
-    const cS  = slack ? PRECIOS.slack   : 0;
-    const cSF = sf === 'Cloud' ? PRECIOS.sfCloud : sf === 'Portal' ? PRECIOS.sfPortal : 0;
+    const cJ  = jira  ? PRECIOS.jira : 0;
+    const cS  = slack ? PRECIOS.slack : 0;
+    const cSF = sf    ? PRECIOS.sf : 0;
     const cT  = cG + cJ + cS + cSF;
     totG += cG; totJ += cJ; totS += cS; totSF += cSF; totTotal += cT;
 
@@ -126,7 +126,7 @@ function escribirGrupo(
       nombre, correo, estado,
       jira  ? 'Sí' : 'No',
       slack ? 'Sí' : 'No',
-      sf || '—',
+      sf    ? 'Sí' : 'No',
       fecha ? formatFecha(fecha) : '—',
       '', '',
       cG, cJ, cS, cSF, cT,

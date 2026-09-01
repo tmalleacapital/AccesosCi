@@ -346,7 +346,7 @@ export interface MiembroExtra {
   correo: string;
   slack: boolean;
   jira: boolean;
-  sf: string;
+  sf: boolean;
   estado: string;
 }
 
@@ -364,7 +364,7 @@ export async function leerMiembrosExtra(): Promise<MiembroExtra[]> {
     correo: row.correo as string,
     slack: row.slack as boolean,
     jira: row.jira as boolean,
-    sf: row.sf as string,
+    sf: row.sf as boolean,
     estado: row.estado as string,
   }));
   // Deduplicar por correo: conservar el último insertado (más reciente)
@@ -380,7 +380,7 @@ export async function crearMiembroExtra(
   correo: string,
   slack: boolean,
   jira: boolean,
-  sf: string,
+  sf: boolean,
 ): Promise<void> {
   const { error } = await getSupabase()
     .from('miembros_extra')

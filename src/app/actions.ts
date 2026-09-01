@@ -95,7 +95,7 @@ interface AsesorEstaticoRaw {
   tl?: boolean;
   jira?: boolean;
   slack?: boolean;
-  sf?: string;
+  sf?: boolean;
 }
 interface GrupoEstaticoRaw {
   nombre: string;
@@ -270,7 +270,7 @@ async function crearMiembroExtraSiNoExiste(
   correo: string,
   slack: boolean,
   jira: boolean,
-  sf: string,
+  sf: boolean,
 ): Promise<void> {
   const miembros = await leerMiembrosExtra();
   const yaExiste = miembros.some(
@@ -540,7 +540,7 @@ export async function crearMiembroAction(
   correo: string,
   slack: boolean,
   jira: boolean,
-  sf: string,
+  sf: boolean,
 ): Promise<void> {
   const sesion = await getSesion();
   if (!sesion || sesion.rol !== 'admin') throw new Error('No autorizado.');
@@ -624,7 +624,7 @@ export async function cambiarEstadoAction(formData: FormData) {
         correoCorporativoAsignado,
         tieneSlack,
         tieneJira,
-        '',
+        false,
       );
     }
 
@@ -766,7 +766,7 @@ export async function cambiarEstadoAction(formData: FormData) {
         correoCorporativoAsignado,
         tieneSlack,
         tieneJira,
-        '',
+        false,
       );
     }
 
@@ -778,7 +778,7 @@ export async function cambiarEstadoAction(formData: FormData) {
 
 export async function transferirCorreoAction(
   correo: string,
-  datos: { nombre: string; slack: boolean; jira: boolean; sf: string; estado: string },
+  datos: { nombre: string; slack: boolean; jira: boolean; sf: boolean; estado: string },
   targetHojaId: string,
   targetGrupoNombre: string,
   esDinamico: boolean,
@@ -860,7 +860,7 @@ export async function transferirGrupoAction(
       const nombre = edits[`${a.correo}||nombre`] ?? a.nombre;
       const jira = (edits[`${a.correo}||jira`] ?? (a.jira ? 'true' : 'false')) === 'true';
       const slack = (edits[`${a.correo}||slack`] ?? (a.slack ? 'true' : 'false')) === 'true';
-      const sf = edits[`${a.correo}||sf`] ?? a.sf ?? '';
+      const sf = (edits[`${a.correo}||sf`] ?? (a.sf ? 'true' : 'false')) === 'true';
       await guardarEdicionCorreo(a.correo, 'transferido', 'true');
       await crearMiembroExtraSiNoExiste(targetHojaId, grupoNombre, nombre, a.correo, slack, jira, sf);
       await registrarHistorial(a.correo, 'mbp_bp', origenLabel, destinoLabel, sesion.email);

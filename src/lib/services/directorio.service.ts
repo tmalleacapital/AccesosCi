@@ -14,7 +14,7 @@ export interface AsesorEstaticoRaw {
   estado?: string;
   jira?: boolean;
   slack?: boolean;
-  sf?: string;
+  sf?: boolean;
   tl?: boolean;
 }
 
@@ -53,7 +53,7 @@ export interface MiembroExtraRaw {
   correo: string;
   slack: boolean;
   jira: boolean;
-  sf: string;
+  sf: boolean;
   estado: string;
 }
 
@@ -72,7 +72,7 @@ export interface AsesorFusionado {
   estado: string;
   jira: boolean;
   slack: boolean;
-  sf: string;
+  sf: boolean;
   tl: boolean;
   eliminado: boolean;
   transferido: boolean;
@@ -102,7 +102,7 @@ function aplicarOverrides(
     estado: (edits[key('estado')] ?? a.estado ?? 'Activo').toLowerCase(),
     jira: (edits[key('jira')] ?? (a.jira ? 'true' : 'false')) === 'true',
     slack: (edits[key('slack')] ?? (a.slack ? 'true' : 'false')) === 'true',
-    sf: (edits[key('sf')] ?? a.sf ?? '').trim(),
+    sf: (edits[key('sf')] ?? (a.sf ? 'true' : 'false')) === 'true',
     tl: 'tl' in a ? !!a.tl : false,
     eliminado: edits[key('eliminado')] === 'true',
     transferido: esDinamico ? false : edits[key('transferido')] === 'true',

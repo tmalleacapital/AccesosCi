@@ -32,7 +32,7 @@ interface Asesor {
   estado: string;
   jira: boolean;
   slack: boolean;
-  sf: string;
+  sf: boolean;
   tl: boolean;
   /** Correo del Team Leader al que reporta este asesor dentro de su BP. */
   reportaA?: string;
@@ -44,7 +44,6 @@ interface Asesor {
 interface Grupo {
   nombre: string;
   asesores: Asesor[];
-  metricas: { label: string; valor: number }[];
   extraId?: string;
 }
 
@@ -108,10 +107,6 @@ function formatFechaChile(iso: string): string {
 
 function estKey(correo: string, campo: string) {
   return `${correo}||${campo}`;
-}
-
-function metricaKey(grupoNombre: string, label: string) {
-  return `__metrica__:${grupoNombre}||${label}`;
 }
 
 // ─── Exportación XLSX (vía API route — exceljs corre en servidor) ────────────
@@ -213,15 +208,7 @@ async function exportarHojaXlsx(
 
   const gruposDin = gruposExtra
     .filter((g) => g.hojaId === hoja.id)
-    .map((g) => ({
-      nombre: g.nombre,
-      asesores: [] as Grupo['asesores'],
-      metricas: [
-        { label: 'Cuentas Portal Activo', valor: 0 },
-        { label: 'Cuentas Portal Creadas', valor: 0 },
-        { label: 'Cuentas SalesCloud', valor: 0 },
-      ],
-    }));
+    .map((g) => ({ nombre: g.nombre, asesores: [] as Grupo['asesores'] }));
 
   const todosGrupos = [...hoja.grupos.filter((g) => !ocultos.has(g.nombre)), ...gruposDin].map(
     (g) => {
@@ -292,15 +279,7 @@ async function exportarTodosMbpXlsx(
 
     const gruposDin = gruposExtra
       .filter((g) => g.hojaId === hoja.id)
-      .map((g) => ({
-        nombre: g.nombre,
-        asesores: [] as Grupo['asesores'],
-        metricas: [
-          { label: 'Cuentas Portal Activo', valor: 0 },
-          { label: 'Cuentas Portal Creadas', valor: 0 },
-          { label: 'Cuentas SalesCloud', valor: 0 },
-        ],
-      }));
+      .map((g) => ({ nombre: g.nombre, asesores: [] as Grupo['asesores'] }));
 
     const todosGrupos = [...hoja.grupos.filter((g) => !ocultos.has(g.nombre)), ...gruposDin].map(
       (g) => {
@@ -543,30 +522,6 @@ function CeldaFecha({
   );
 }
 
-function CeldaSelect({
-  valor,
-  opciones,
-  onSave,
-}: {
-  valor: string;
-  opciones: string[];
-  onSave: (v: string) => void;
-}) {
-  return (
-    <select
-      value={valor}
-      onChange={(e) => onSave(e.target.value)}
-      className="rounded border border-border bg-background px-1 py-0.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-    >
-      {opciones.map((o) => (
-        <option key={o} value={o}>
-          {o || '—'}
-        </option>
-      ))}
-    </select>
-  );
-}
-
 // ─── Badge estado ────────────────────────────────────────────────────────────
 
 function EstadoBadge({ estado, onSave }: { estado: string; onSave: (v: string) => void }) {
@@ -576,7 +531,7 @@ function EstadoBadge({ estado, onSave }: { estado: string; onSave: (v: string) =
       value={estado}
       onChange={(e) => onSave(e.target.value)}
       className={cn(
-        'cursor-pointer rounded-full border px-2 py-0.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary/50',
+        'w-full cursor-pointer rounded-full border px-2 py-0.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary/50',
         activo
           ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400'
           : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-400',
@@ -695,7 +650,7 @@ interface TransferirDatos {
   nombre: string;
   slack: boolean;
   jira: boolean;
-  sf: string;
+  sf: boolean;
   estado: string;
   esDinamico: boolean;
   origenHojaId?: string;
@@ -738,7 +693,7 @@ function FilaAsesor({
   const estado = val('estado');
   const jira = val('jira') === 'true';
   const slack = val('slack') === 'true';
-  const sf = val('sf');
+  const sf = val('sf') === 'true';
   const tl = val('tl') === 'true';
   const reportaA = val('reportaA');
   const fecha = val('fechaEliminacion');
@@ -850,17 +805,19 @@ function FilaAsesor({
         </td>
       )}
 
-      {/* Salesforce */}
+      {/* Nodia */}
       {columnas.sf && (
-        <td className="px-3 py-2">
+        <td className="px-3 py-2 text-center">
           {soloLectura ? (
-            <span className="text-xs text-muted-foreground">{sf || '—'}</span>
+            <span className="text-base leading-none">
+              {sf ? (
+                <span className="text-emerald-600 dark:text-emerald-400">✓</span>
+              ) : (
+                <span className="text-muted-foreground/40">—</span>
+              )}
+            </span>
           ) : (
-            <CeldaSelect
-              valor={sf}
-              opciones={['', 'Portal', 'Cloud']}
-              onSave={(v) => onEdit('sf', v, sf)}
-            />
+            <ToggleBool valor={sf} onToggle={() => onEdit('sf', sf ? 'false' : 'true', sf ? 'true' : 'false')} />
           )}
         </td>
       )}
@@ -1003,56 +960,13 @@ function FilaAsesor({
 
 // ─── Tabla de grupo ──────────────────────────────────────────────────────────
 
-function calcularMetricasDinamicas(
-  grupo: Grupo,
-  edits: Record<string, string>,
-  eliminadas: Set<string>,
-): { label: string; valor: number }[] {
-  const asesores = grupo.asesores
-    .filter(
-      (a) =>
-        !eliminadas.has(a.correo) &&
-        edits[estKey(a.correo, 'eliminado')] !== 'true' &&
-        (a.esDinamico || edits[estKey(a.correo, 'transferido')] !== 'true'),
-    )
-    .map((a) => ({
-      sf: (edits[estKey(a.correo, 'sf')] ?? a.sf ?? '').trim(),
-      estado: (edits[estKey(a.correo, 'estado')] ?? a.estado ?? 'Activo').toLowerCase(),
-    }));
-
-  const portalActivo = asesores.filter((a) => a.sf === 'Portal' && a.estado === 'activo').length;
-  const salesCloud = asesores.filter((a) => a.sf === 'Cloud' && a.estado === 'activo').length;
-
-  const rawPortalActivo = edits[metricaKey(grupo.nombre, 'Cuentas Portal Activo')];
-  const portalActivoFinal =
-    rawPortalActivo !== undefined ? parseInt(rawPortalActivo, 10) : portalActivo;
-
-  const jsonBaseline =
-    grupo.metricas.find((m) => m.label === 'Cuentas Portal Creadas')?.valor ?? portalActivo;
-  const rawBaseline = edits[metricaKey(grupo.nombre, 'Cuentas Portal Creadas')];
-  const portalCreadas =
-    rawBaseline !== undefined
-      ? Math.max(parseInt(rawBaseline, 10), portalActivo)
-      : Math.max(jsonBaseline, portalActivo);
-
-  const rawSalesCloud = edits[metricaKey(grupo.nombre, 'Cuentas SalesCloud')];
-  const salesCloudFinal = rawSalesCloud !== undefined ? parseInt(rawSalesCloud, 10) : salesCloud;
-
-  return [
-    { label: 'Cuentas Portal Activo', valor: portalActivoFinal },
-    { label: 'Cuentas Portal Creadas', valor: portalCreadas },
-    { label: 'Cuentas SalesCloud', valor: salesCloudFinal },
-  ];
-}
-
 // ─── Dashboard de costos (BP) ──────────────────────────────────────────────────
 
 function calcularResumenCostos(grupos: Grupo[], edits: Record<string, string>, eliminadas: Set<string>) {
   let countGoogle = 0;
   let countJira = 0;
   let countSlack = 0;
-  let countSfCloud = 0;
-  let countSfPortal = 0;
+  let countSf = 0;
 
   for (const g of grupos) {
     for (const a of g.asesores) {
@@ -1063,11 +977,10 @@ function calcularResumenCostos(grupos: Grupo[], edits: Record<string, string>, e
       countGoogle++;
       const jira = (edits[estKey(a.correo, 'jira')] ?? (a.jira ? 'true' : 'false')) === 'true';
       const slack = (edits[estKey(a.correo, 'slack')] ?? (a.slack ? 'true' : 'false')) === 'true';
-      const sf = (edits[estKey(a.correo, 'sf')] ?? a.sf ?? '').trim();
+      const sf = (edits[estKey(a.correo, 'sf')] ?? (a.sf ? 'true' : 'false')) === 'true';
       if (jira) countJira++;
       if (slack) countSlack++;
-      if (sf === 'Cloud') countSfCloud++;
-      if (sf === 'Portal') countSfPortal++;
+      if (sf) countSf++;
     }
   }
 
@@ -1075,8 +988,7 @@ function calcularResumenCostos(grupos: Grupo[], edits: Record<string, string>, e
     { label: 'Google Workspace', count: countGoogle, precio: PRECIOS.google },
     { label: 'Jira', count: countJira, precio: PRECIOS.jira },
     { label: 'Hubix', count: countSlack, precio: PRECIOS.slack },
-    { label: 'Nodia Cloud', count: countSfCloud, precio: PRECIOS.sfCloud },
-    { label: 'Nodia Portal', count: countSfPortal, precio: PRECIOS.sfPortal },
+    { label: 'Nodia', count: countSf, precio: PRECIOS.sf },
   ].map((p) => ({ ...p, subtotal: p.count * p.precio }));
 
   const total = plataformas.reduce((n, p) => n + p.subtotal, 0);
@@ -1138,65 +1050,6 @@ function ResumenCostos({
 
 // ─── Número editable en badge ─────────────────────────────────────────────────
 
-function BadgeNumeroEditable({
-  label,
-  valor,
-  onSave,
-}: {
-  label: string;
-  valor: number;
-  onSave: (v: number) => void;
-}) {
-  const [editando, setEditando] = useState(false);
-  const [draft, setDraft] = useState(String(valor));
-  const ref = useRef<HTMLInputElement>(null);
-
-  function iniciar() {
-    setDraft(String(valor));
-    setEditando(true);
-    setTimeout(() => ref.current?.select(), 0);
-  }
-
-  function confirmar() {
-    setEditando(false);
-    const num = parseInt(draft, 10);
-    if (!isNaN(num) && num !== valor) onSave(num);
-  }
-
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400">
-      {label}:{' '}
-      {editando ? (
-        <input
-          ref={ref}
-          type="number"
-          value={draft}
-          autoFocus
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={confirmar}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') confirmar();
-            if (e.key === 'Escape') setEditando(false);
-          }}
-          className="w-10 rounded border border-sky-400 bg-sky-50 px-1 text-center text-xs font-bold text-sky-700 outline-none dark:bg-sky-950 dark:text-sky-400"
-        />
-      ) : (
-        <strong
-          role="button"
-          tabIndex={0}
-          title="Clic para editar"
-          aria-label={`${label}: ${valor}. Clic para editar`}
-          onClick={iniciar}
-          onKeyDown={(e) => e.key === 'Enter' && iniciar()}
-          className="cursor-pointer rounded hover:underline hover:decoration-dotted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-        >
-          {valor}
-        </strong>
-      )}
-    </span>
-  );
-}
-
 function TablaGrupo({
   hojaId,
   grupo,
@@ -1205,7 +1058,6 @@ function TablaGrupo({
   lideres = [],
   eliminadas,
   onEdit,
-  onEditMetrica,
   onEliminar,
   onTransferir,
   onCambiarMbp,
@@ -1226,7 +1078,6 @@ function TablaGrupo({
     hojaId?: string,
     grupoNombre?: string,
   ) => void;
-  onEditMetrica: (label: string, valor: number) => void;
   onEliminar: (correo: string, nombre: string) => void;
   onTransferir: (datos: TransferirDatos) => void;
   onCambiarMbp: (datos: { hojaId: string; grupoNombre: string; extraId?: string }) => void;
@@ -1235,10 +1086,6 @@ function TablaGrupo({
 }) {
   const [exportando, setExportando] = useState(false);
   const [agregando, setAgregando] = useState(false);
-  const metricas = useMemo(
-    () => calcularMetricasDinamicas(grupo, edits, eliminadas),
-    [grupo, edits, eliminadas],
-  );
 
   const asesoresVisibles = grupo.asesores
     .filter(
@@ -1290,23 +1137,6 @@ function TablaGrupo({
         <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
           {asesoresVisibles.length}
         </span>
-        {metricas.map((m) =>
-          !soloLectura ? (
-            <BadgeNumeroEditable
-              key={m.label}
-              label={m.label}
-              valor={m.valor}
-              onSave={(v) => onEditMetrica(m.label, v)}
-            />
-          ) : (
-            <span
-              key={m.label}
-              className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-400"
-            >
-              {m.label}: <strong>{m.valor}</strong>
-            </span>
-          ),
-        )}
         <button
           type="button"
           title="Exportar a Excel"
@@ -1348,7 +1178,9 @@ function TablaGrupo({
                 </th>
               )}
               {columnas.sf && (
-                <th className="w-[95px] px-3 py-2 font-semibold text-foreground">Nodia</th>
+                <th className="w-16 whitespace-nowrap px-3 py-2 text-center font-semibold text-foreground">
+                  Nodia
+                </th>
               )}
               {columnas.reportaA && (
                 <th className="w-[124px] whitespace-nowrap px-3 py-2 font-semibold text-foreground">
@@ -1529,14 +1361,14 @@ function ModalAgregarCorreo({
   onCancelar,
 }: {
   grupoNombre: string;
-  onCrear: (datos: { nombre: string; correo: string; slack: boolean; jira: boolean; sf: string }) => Promise<void>;
+  onCrear: (datos: { nombre: string; correo: string; slack: boolean; jira: boolean; sf: boolean }) => Promise<void>;
   onCancelar: () => void;
 }) {
   const [nombre, setNombre] = useState('');
   const [correo, setCorreo] = useState('');
   const [slack, setSlack] = useState(false);
   const [jira, setJira] = useState(false);
-  const [sf, setSf] = useState('');
+  const [sf, setSf] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const ref = useRef<HTMLInputElement>(null);
@@ -1600,16 +1432,10 @@ function ModalAgregarCorreo({
               <input type="checkbox" checked={slack} onChange={(e) => setSlack(e.target.checked)} disabled={pending} />
               Hubix
             </label>
-            <select
-              value={sf}
-              onChange={(e) => setSf(e.target.value)}
-              disabled={pending}
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground disabled:opacity-40"
-            >
-              <option value="">Nodia: —</option>
-              <option value="Portal">Nodia: Portal</option>
-              <option value="Cloud">Nodia: Cloud</option>
-            </select>
+            <label className="flex items-center gap-1.5">
+              <input type="checkbox" checked={sf} onChange={(e) => setSf(e.target.checked)} disabled={pending} />
+              Nodia
+            </label>
           </div>
           {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
           <div className="flex justify-end gap-2 pt-1">
@@ -1993,11 +1819,6 @@ export function ListaCorreos({
         .map((g) => ({
           nombre: g.nombre,
           asesores: [],
-          metricas: [
-            { label: 'Cuentas Portal Activo', valor: 0 },
-            { label: 'Cuentas Portal Creadas', valor: 0 },
-            { label: 'Cuentas SalesCloud', valor: 0 },
-          ],
           extraId: g.id,
         })),
     [gruposExtra, hoja.id],
@@ -2306,14 +2127,6 @@ export function ListaCorreos({
     }
   }
 
-  function handleEditMetrica(grupoNombre: string, label: string, valor: number) {
-    const key = metricaKey(grupoNombre, label);
-    startTransition(() => {
-      actualizarEdits({ key, valor: String(valor) });
-      editarCorreoAction(key, label, String(valor));
-    });
-  }
-
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2502,7 +2315,6 @@ export function ListaCorreos({
               lideres={lideres}
               eliminadas={eliminadas}
               onEdit={handleEdit}
-              onEditMetrica={(label, valor) => handleEditMetrica(g.nombre, label, valor)}
               onEliminar={handleSolicitarEliminar}
               onTransferir={setTransfiriendo}
               onCambiarMbp={setCambiandoMbp}

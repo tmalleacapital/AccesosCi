@@ -14,7 +14,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -23,7 +23,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -32,7 +32,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -41,7 +41,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -50,7 +50,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -59,7 +59,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -68,7 +68,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -77,7 +77,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -86,7 +86,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -95,7 +95,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -104,7 +104,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -113,7 +113,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -141,7 +141,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-15"
             },
@@ -151,7 +151,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -160,7 +160,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -169,7 +169,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -178,7 +178,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -187,7 +187,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-15"
             },
@@ -197,7 +197,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-15"
             },
@@ -207,7 +207,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -216,7 +216,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -225,7 +225,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-02"
             },
@@ -235,7 +235,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             }
           ],
@@ -269,7 +269,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -278,7 +278,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -287,7 +287,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -296,7 +296,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -305,7 +305,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -314,7 +314,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -323,7 +323,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -332,7 +332,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -341,7 +341,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": true
             },
             {
@@ -350,7 +350,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -359,7 +359,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -368,7 +368,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -377,7 +377,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -386,7 +386,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -414,7 +414,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -423,7 +423,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -432,7 +432,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -441,7 +441,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -450,7 +450,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -459,7 +459,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -468,7 +468,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -477,7 +477,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -486,7 +486,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -495,7 +495,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -523,7 +523,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -532,7 +532,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-02"
             },
@@ -542,7 +542,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-02"
             },
@@ -552,7 +552,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -561,7 +561,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-22"
             },
@@ -571,7 +571,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -580,7 +580,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -589,7 +589,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -598,7 +598,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -607,7 +607,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -616,7 +616,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -644,7 +644,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -653,7 +653,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -662,7 +662,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -671,7 +671,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -680,7 +680,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -689,7 +689,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -698,7 +698,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -707,7 +707,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -716,7 +716,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -744,7 +744,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -753,7 +753,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -762,7 +762,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -786,7 +786,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -795,7 +795,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -804,7 +804,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -838,7 +838,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -847,7 +847,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -856,7 +856,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -865,7 +865,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -874,7 +874,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -883,7 +883,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -892,7 +892,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -901,7 +901,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": true
             },
             {
@@ -910,7 +910,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -919,7 +919,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -928,7 +928,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -937,7 +937,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -965,7 +965,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -974,7 +974,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -983,7 +983,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -992,7 +992,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1001,7 +1001,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1010,7 +1010,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1019,7 +1019,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1028,7 +1028,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1037,7 +1037,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": true
             },
             {
@@ -1046,7 +1046,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -1070,7 +1070,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1079,7 +1079,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1088,7 +1088,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -1097,7 +1097,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1106,7 +1106,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1115,7 +1115,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1124,7 +1124,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -1133,7 +1133,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1142,7 +1142,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-01"
             },
@@ -1152,7 +1152,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1161,7 +1161,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-08"
             },
@@ -1171,7 +1171,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": true
             },
             {
@@ -1180,7 +1180,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -1189,7 +1189,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1198,7 +1198,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1207,7 +1207,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1216,7 +1216,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1225,7 +1225,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1234,7 +1234,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1243,7 +1243,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1252,7 +1252,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1261,7 +1261,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1270,7 +1270,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1279,7 +1279,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1288,7 +1288,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "",
+              "sf": false,
               "tl": false
             }
           ],
@@ -1316,7 +1316,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1325,7 +1325,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-05-28"
             },
@@ -1335,7 +1335,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             }
           ],
@@ -1363,7 +1363,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": true
             },
             {
@@ -1372,7 +1372,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1381,7 +1381,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1390,7 +1390,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-16"
             },
@@ -1400,7 +1400,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1409,7 +1409,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -1418,7 +1418,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1427,7 +1427,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-16"
             },
@@ -1437,7 +1437,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1446,7 +1446,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1455,7 +1455,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-16"
             },
@@ -1465,7 +1465,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -1474,7 +1474,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-16"
             }
@@ -1503,7 +1503,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -1512,7 +1512,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-05"
             },
@@ -1522,7 +1522,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1531,7 +1531,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1540,7 +1540,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             }
           ],
@@ -1574,7 +1574,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1583,7 +1583,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1592,7 +1592,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-19"
             },
@@ -1602,7 +1602,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-01"
             },
@@ -1612,7 +1612,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": false,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -1621,7 +1621,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1630,7 +1630,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1639,7 +1639,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1648,7 +1648,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1657,7 +1657,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1666,7 +1666,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1675,7 +1675,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -1703,7 +1703,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1712,7 +1712,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -1721,7 +1721,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1730,7 +1730,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             }
           ],
@@ -1758,7 +1758,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1767,7 +1767,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1776,7 +1776,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1785,7 +1785,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1794,7 +1794,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1803,7 +1803,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -1812,7 +1812,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1821,7 +1821,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1830,7 +1830,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1839,7 +1839,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1848,7 +1848,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1857,7 +1857,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1866,7 +1866,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": false,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -1875,7 +1875,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1884,7 +1884,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -1893,7 +1893,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1902,7 +1902,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -1930,7 +1930,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": true
             },
             {
@@ -1939,7 +1939,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "",
+              "sf": false,
               "tl": false,
               "fechaEliminacion": "2026-06-08"
             },
@@ -1949,7 +1949,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -1958,7 +1958,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             }
           ],
@@ -1986,7 +1986,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -1995,7 +1995,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             }
           ],
@@ -2029,7 +2029,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2038,7 +2038,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2047,7 +2047,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -2056,7 +2056,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2065,7 +2065,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2074,7 +2074,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2083,7 +2083,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-01"
             },
@@ -2093,7 +2093,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2102,7 +2102,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": true
             },
             {
@@ -2111,7 +2111,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2120,7 +2120,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2129,7 +2129,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2138,7 +2138,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2147,7 +2147,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2156,7 +2156,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2165,7 +2165,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2174,7 +2174,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -2208,7 +2208,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2217,7 +2217,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2226,7 +2226,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2235,7 +2235,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": true
             },
             {
@@ -2244,7 +2244,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2253,7 +2253,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2262,7 +2262,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "",
+              "sf": false,
               "tl": false,
               "fechaEliminacion": "2026-06-16"
             },
@@ -2272,7 +2272,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2281,7 +2281,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2290,7 +2290,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2299,7 +2299,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-02"
             },
@@ -2309,7 +2309,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2318,7 +2318,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2327,7 +2327,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2336,7 +2336,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2345,7 +2345,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2354,7 +2354,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2363,7 +2363,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": false,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             }
           ],
@@ -2391,7 +2391,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2400,7 +2400,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2409,7 +2409,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2418,7 +2418,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2427,7 +2427,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2436,7 +2436,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2445,7 +2445,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -2454,7 +2454,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2463,7 +2463,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-03"
             },
@@ -2473,7 +2473,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2482,7 +2482,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2491,7 +2491,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2500,7 +2500,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-01"
             }
@@ -2529,7 +2529,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2538,7 +2538,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2547,7 +2547,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2556,7 +2556,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2565,7 +2565,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2574,7 +2574,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             }
           ],
@@ -2602,7 +2602,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-10"
             },
@@ -2612,7 +2612,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -2621,7 +2621,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2630,7 +2630,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-10"
             },
@@ -2640,7 +2640,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-10"
             },
@@ -2650,7 +2650,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-10"
             },
@@ -2660,7 +2660,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-10"
             },
@@ -2670,7 +2670,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": false,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-10"
             },
@@ -2680,7 +2680,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false,
               "fechaEliminacion": "2026-06-10"
             },
@@ -2690,7 +2690,7 @@
               "estado": "Eliminado",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             }
           ],
@@ -2724,7 +2724,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2733,7 +2733,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2742,7 +2742,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2751,7 +2751,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2760,7 +2760,7 @@
               "estado": "Activo",
               "jira": true,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             },
             {
@@ -2769,7 +2769,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2778,7 +2778,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2787,7 +2787,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": true
             }
           ],
@@ -2815,7 +2815,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2824,7 +2824,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Portal",
+              "sf": true,
               "tl": false
             },
             {
@@ -2833,7 +2833,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": true,
-              "sf": "Cloud",
+              "sf": true,
               "tl": false
             }
           ],
@@ -2867,7 +2867,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2876,7 +2876,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2885,7 +2885,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2894,7 +2894,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2903,7 +2903,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2912,7 +2912,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2921,7 +2921,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2930,7 +2930,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2939,7 +2939,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2948,7 +2948,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2957,7 +2957,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2966,7 +2966,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2975,7 +2975,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2984,7 +2984,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -2993,7 +2993,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3002,7 +3002,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3011,7 +3011,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3020,7 +3020,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3029,7 +3029,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3038,7 +3038,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3047,7 +3047,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3056,7 +3056,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3065,7 +3065,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3074,7 +3074,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3083,7 +3083,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3092,7 +3092,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3101,7 +3101,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3110,7 +3110,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3119,7 +3119,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3128,7 +3128,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3137,7 +3137,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3146,7 +3146,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3155,7 +3155,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3164,7 +3164,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3173,7 +3173,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3182,7 +3182,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3191,7 +3191,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3200,7 +3200,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3209,7 +3209,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3218,7 +3218,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3227,7 +3227,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3236,7 +3236,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3245,7 +3245,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3254,7 +3254,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3263,7 +3263,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3272,7 +3272,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3281,7 +3281,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3290,7 +3290,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             },
             {
@@ -3299,7 +3299,7 @@
               "estado": "Activo",
               "jira": false,
               "slack": false,
-              "sf": "",
+              "sf": false,
               "tl": false
             }
           ],

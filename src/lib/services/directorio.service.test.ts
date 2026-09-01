@@ -51,7 +51,7 @@ describe('fusionarDirectorio', () => {
             correo: 'beto@capitalinteligente.cl',
             slack: false,
             jira: false,
-            sf: '',
+            sf: false,
             estado: 'Activo',
           },
         ],
@@ -78,7 +78,7 @@ describe('fusionarDirectorio', () => {
             correo: 'carla@capitalinteligente.cl',
             slack: true,
             jira: false,
-            sf: '',
+            sf: false,
             estado: 'Activo',
           },
         ],
@@ -99,7 +99,7 @@ describe('fusionarDirectorio', () => {
         edits: {
           'ana@capitalinteligente.cl||estado': 'Eliminado',
           'ana@capitalinteligente.cl||jira': 'false',
-          'ana@capitalinteligente.cl||sf': 'ID-123',
+          'ana@capitalinteligente.cl||sf': 'true',
           'ana@capitalinteligente.cl||nombre': 'Ana Torres Editada',
         },
       }),
@@ -107,7 +107,7 @@ describe('fusionarDirectorio', () => {
     expect(resultado[0]).toMatchObject({
       nombre: 'Ana Torres Editada',
       estado: 'eliminado',
-      sf: 'ID-123',
+      sf: true,
     });
     expect(resultado[0].jira).toBe(false);
   });
@@ -138,7 +138,7 @@ describe('fusionarDirectorio', () => {
             correo: 'beto@capitalinteligente.cl',
             slack: false,
             jira: false,
-            sf: '',
+            sf: false,
             estado: 'Activo',
           },
         ],

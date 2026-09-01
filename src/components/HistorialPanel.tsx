@@ -35,8 +35,7 @@ function formatTimestamp(iso: string): string {
 
 function formatValor(campo: string, valor: string | null): string {
   if (valor === null || valor === '') return '—';
-  if (campo === 'jira' || campo === 'slack' || campo === 'tl') return valor === 'true' ? 'Sí' : 'No';
-  if (campo === 'sf') return valor || '—';
+  if (campo === 'jira' || campo === 'slack' || campo === 'sf' || campo === 'tl') return valor === 'true' ? 'Sí' : 'No';
   return valor;
 }
 
